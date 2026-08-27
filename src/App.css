@@ -957,6 +957,8 @@
 }
 
 .auth-nav {
+  justify-self: stretch;
+  align-self: start;
   display: flex;
   align-items: center;
   justify-content: space-between;
