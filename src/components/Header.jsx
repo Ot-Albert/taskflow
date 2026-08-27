@@ -1,4 +1,12 @@
-export default function Header({ theme, onToggleTheme, onExportJSON, onExportCSV, taskCount }) {
+export default function Header({
+  theme,
+  onToggleTheme,
+  onExportJSON,
+  onExportCSV,
+  taskCount,
+  userName,
+  onSignOut,
+}) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -32,6 +40,21 @@ export default function Header({ theme, onToggleTheme, onExportJSON, onExportCSV
             Export CSV
           </button>
         </div>
+
+        {userName && (
+          <div className="app-header__user">
+            <span className="app-header__user-name" title={userName}>
+              {userName}
+            </span>
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              onClick={onSignOut}
+            >
+              Sign out
+            </button>
+          </div>
+        )}
 
         <button
           type="button"
