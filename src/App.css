@@ -67,6 +67,7 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .export-menu {
@@ -747,7 +748,7 @@
 
 .landing__hero-title {
   margin: 0;
-  font-size: 3.2rem;
+  font-size: clamp(1.8rem, 6vw, 3.2rem);
   line-height: 1.1;
   letter-spacing: -0.04em;
   font-weight: 700;
@@ -762,7 +763,7 @@
 
 .landing__hero-subtitle {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
   color: var(--text-muted);
   line-height: 1.6;
   max-width: 480px;
@@ -837,7 +838,7 @@
 
 .landing__section-title {
   text-align: center;
-  font-size: 2rem;
+  font-size: clamp(1.4rem, 4vw, 2rem);
   letter-spacing: -0.03em;
   margin: 0 0 2.5rem;
   font-weight: 700;
@@ -897,7 +898,7 @@
 }
 
 .landing__cta-title {
-  font-size: 2rem;
+  font-size: clamp(1.4rem, 4vw, 2rem);
   letter-spacing: -0.03em;
   margin: 0 0 0.75rem;
   font-weight: 700;
@@ -906,7 +907,7 @@
 .landing__cta-subtitle {
   margin: 0 0 1.5rem;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: clamp(0.9rem, 2.5vw, 1.05rem);
 }
 
 /* Landing footer */
@@ -924,6 +925,7 @@
   background: var(--bg);
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .auth-nav {
@@ -957,7 +959,7 @@
 
 .auth-card__title {
   margin: 0 0 0.4rem;
-  font-size: 1.6rem;
+  font-size: clamp(1.3rem, 5vw, 1.6rem);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -1002,12 +1004,15 @@
 }
 
 /* ---------- Landing / auth responsive ---------- */
+
+/* Tablet — hero stacks to single column, features go to 2 columns */
 @media (max-width: 880px) {
   .landing__hero {
     grid-template-columns: 1fr;
     gap: 2rem;
     text-align: center;
     padding-top: 1rem;
+    min-height: auto;
   }
   .landing__hero-content {
     align-items: center;
@@ -1026,15 +1031,19 @@
   }
 }
 
+/* Mobile — single column features, compact nav, tighter spacing */
 @media (max-width: 600px) {
-  .landing__hero-title {
-    font-size: 2.2rem;
+  .landing__nav {
+    padding: 1rem 1rem;
   }
-  .landing__section-title {
-    font-size: 1.5rem;
+  .landing__hero {
+    padding: 1rem 1rem 3rem;
   }
-  .landing__cta-title {
-    font-size: 1.5rem;
+  .landing__features {
+    padding: 2rem 1rem 3rem;
+  }
+  .landing__cta {
+    padding: 2rem 1rem 3rem;
   }
   .landing__features-grid {
     grid-template-columns: 1fr;
@@ -1042,11 +1051,80 @@
   .landing__nav-actions .btn--ghost {
     display: none;
   }
+  .landing__hero-cta {
+    flex-direction: column;
+    width: 100%;
+  }
+  .landing__hero-cta .btn {
+    width: 100%;
+    text-align: center;
+  }
   .auth-card {
     margin: 1rem;
     padding: 1.5rem;
   }
   .app-header__user-name {
     display: none;
+  }
+  .app-header {
+    padding: 0.5rem 0 1rem;
+  }
+  .app-header__actions {
+    gap: 0.35rem;
+  }
+  .export-menu {
+    flex-wrap: wrap;
+  }
+}
+
+/* Very small screens — tighten everything, prevent overflow */
+@media (max-width: 400px) {
+  .landing__nav {
+    padding: 0.75rem 0.75rem;
+  }
+  .landing__nav-title {
+    font-size: 1rem;
+  }
+  .landing__hero {
+    padding: 0.5rem 0.75rem 2rem;
+  }
+  .landing__features {
+    padding: 1.5rem 0.75rem 2rem;
+  }
+  .landing__cta {
+    padding: 1.5rem 0.75rem 2rem;
+  }
+  .preview-card--offset {
+    margin-left: 0;
+  }
+  .preview-card {
+    padding: 1rem 1.1rem;
+  }
+  .auth-card {
+    margin: 0.5rem;
+    padding: 1.25rem;
+    border-radius: var(--radius);
+  }
+  .auth-nav {
+    padding: 1rem 0.75rem;
+  }
+  .auth-nav__brand {
+    font-size: 1rem;
+  }
+  .feature-card {
+    padding: 1.25rem;
+  }
+  .btn--large {
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+  }
+  .app {
+    padding: 0.75rem 0.5rem 1rem;
+  }
+  .filter-bar {
+    padding: 0.75rem;
+  }
+  .task {
+    padding: 0.85rem 0.9rem;
   }
 }
