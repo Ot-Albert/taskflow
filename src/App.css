@@ -924,21 +924,35 @@
 
 /* Landing footer */
 .landing__footer {
+  position: relative;
   text-align: center;
-  padding: 2rem 24px;
-  border-top: 1px solid var(--border);
+  padding: 2rem 0;
   color: var(--text-muted);
   font-size: 0.85rem;
   max-width: 1100px;
   margin: 0 auto;
 }
 
+.landing__footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: calc(1100px - 48px);
+  height: 1px;
+  background: var(--border);
+}
+
 /* ---------- Auth pages ---------- */
 .auth-page {
   min-height: 100vh;
   background: var(--bg);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  justify-items: center;
   overflow-x: hidden;
 }
 
@@ -961,9 +975,9 @@
 }
 
 .auth-card {
-  width: 100%;
+  width: calc(100% - 48px);
   max-width: 420px;
-  margin: 2rem auto;
+  margin: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -1091,8 +1105,9 @@
     text-align: center;
   }
   .auth-card {
-    margin: 1rem;
+    width: calc(100% - 32px);
     padding: 1.5rem;
+    margin: auto;
   }
   .app-header__user-name {
     display: none;
@@ -1106,9 +1121,8 @@
   .export-menu {
     flex-wrap: wrap;
   }
-  .landing__footer {
-    padding-left: 16px;
-    padding-right: 16px;
+  .landing__footer::before {
+    width: calc(100% - 32px);
   }
 }
 
@@ -1153,8 +1167,9 @@
     padding: 1rem 1.1rem;
   }
   .auth-card {
-    margin: 0.5rem;
+    width: calc(100% - 24px);
     padding: 1.25rem;
+    margin: auto;
     border-radius: var(--radius);
   }
   .auth-nav {
@@ -1179,8 +1194,7 @@
   .task {
     padding: 0.85rem 0.9rem;
   }
-  .landing__footer {
-    padding-left: 12px;
-    padding-right: 12px;
+  .landing__footer::before {
+    width: calc(100% - 24px);
   }
 }
