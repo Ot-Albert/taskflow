@@ -51,6 +51,26 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
     const userEmail = userData.user.email;
+    const sessionId = userData.user.session_id;
+
+    // Require a verified login session before allowing deletion.
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    if (sessionId) {
+      const { data: verified } = await adminClient
+        .from("verified_login_sessions")
+        .select("session_id")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (!verified) {
+        return json({ error: "Login verification required." }, 403);
+      }
+    }
 
     // Parse request body.
     const body = await req.json();
@@ -74,9 +94,7 @@ Deno.serve(async (req) => {
     }
 
     // Admin client (bypasses RLS) — used only for deletion.
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    // (Already created above for session verification.)
 
     // Delete avatar files from storage.
     const { data: files } = await adminClient.storage

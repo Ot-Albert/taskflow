@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
+import PasswordField from "../components/PasswordField";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/app";
+  const message = location.state?.message;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +45,8 @@ export default function LoginPage() {
     if (error) {
       setErrors({ form: error.message });
     } else {
-      navigate(from, { replace: true });
+      // After password verification, navigate to the verification page.
+      navigate("/verify-login", { replace: true, state: { from } });
     }
   }
 
@@ -73,6 +76,7 @@ export default function LoginPage() {
         <h1 className="auth-card__title">Welcome back</h1>
         <p className="auth-card__subtitle">Sign in to access your tasks.</p>
 
+        {message && <div className="auth-card__success">{message}</div>}
         {errors.form && <div className="auth-card__error">{errors.form}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="auth-form">
@@ -94,21 +98,20 @@ export default function LoginPage() {
             )}
           </div>
 
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? "password-error" : undefined}
-              placeholder="Your password"
-              autoComplete="current-password"
-            />
-            {errors.password && (
-              <p className="field__error" id="password-error">{errors.password}</p>
-            )}
+          <PasswordField
+            id="password"
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+            placeholder="Your password"
+            autoComplete="current-password"
+          />
+
+          <div className="auth-form__forgot">
+            <Link to="/forgot-password" className="auth-card__link">
+              Forgot password?
+            </Link>
           </div>
 
           <button

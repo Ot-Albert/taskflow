@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PasswordField from "./PasswordField";
 
 /**
  * Reusable confirmation dialog for account deactivation and deletion.
@@ -63,18 +64,15 @@ export default function AccountActionDialog({
         <form onSubmit={handleConfirm} className="account-dialog__form">
           {isDelete && (
             <>
-              <div className="field">
-                <label htmlFor="delete-password">Current password</label>
-                <input
-                  id="delete-password"
-                  ref={passwordRef}
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                />
-              </div>
+              <PasswordField
+                id="delete-password"
+                label="Current password"
+                value={password}
+                onChange={setPassword}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                autoFocus
+              />
               <div className="field">
                 <label htmlFor="delete-confirm">
                   Type <strong>DELETE</strong> to confirm

@@ -1601,3 +1601,101 @@
     padding: 1rem 0.75rem 0.75rem;
   }
 }
+
+/* ---------- Password field with toggle ---------- */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.password-field__toggle {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  transition: color var(--transition), background var(--transition);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.password-field__toggle:hover {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.password-field__toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* ---------- Auth form forgot link ---------- */
+.auth-form__forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin: -0.25rem 0 0.5rem;
+}
+
+.auth-form__forgot .auth-card__link {
+  font-size: 0.85rem;
+}
+
+/* ---------- Auth card success message ---------- */
+.auth-card__success {
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  border: 1px solid var(--success, #22c55e);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* ---------- Verify login page ---------- */
+.verify-code-input {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 0.5rem;
+  font-weight: 600;
+  padding: 0.75rem 0.5rem;
+  max-width: 240px;
+  margin: 0 auto;
+  display: block;
+}
+
+.verify-login__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 400px) {
+  .verify-code-input {
+    font-size: 1.25rem;
+    letter-spacing: 0.35rem;
+    max-width: 100%;
+  }
+
+  .verify-login__actions {
+    flex-direction: column;
+  }
+
+  .verify-login__actions .btn {
+    width: 100%;
+  }
+}

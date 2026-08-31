@@ -1,43 +1,51 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabaseClient";
 import { useTheme } from "../hooks/useTheme";
 import PasswordField from "../components/PasswordField";
 
-export default function SignupPage() {
-  const { signUp } = useAuth();
+export default function ResetPasswordPage() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const nameRef = useRef(null);
+  const [recovered, setRecovered] = useState(false);
+  const passwordRef = useRef(null);
 
   useEffect(() => {
-    nameRef.current?.focus();
+    // Detect the PASSWORD_RECOVERY event from Supabase.
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setRecovered(true);
+        }
+      }
+    );
+
+    // Also check current session — the recovery link may have already
+    // established a session before this component mounted.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setRecovered(true);
+      }
+    });
+
+    passwordRef.current?.focus();
+    return () => {
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   function validate() {
     const e = {};
-    if (!fullName.trim()) e.fullName = "Your name is required.";
-    else if (fullName.trim().length < 2) e.fullName = "Name must be at least 2 characters.";
-
-    if (!email.trim()) e.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-      e.email = "Enter a valid email address.";
-
     if (!password) e.password = "Password is required.";
     else if (password.length < 8) e.password = "Password must be at least 8 characters.";
-
     if (!confirmPassword) e.confirmPassword = "Please confirm your password.";
     else if (password !== confirmPassword)
       e.confirmPassword = "Passwords do not match.";
-
     return e;
   }
 
@@ -48,26 +56,58 @@ export default function SignupPage() {
     if (Object.keys(fieldErrors).length > 0) return;
 
     setSubmitting(true);
-    const { error } = await signUp({
-      email: email.trim(),
-      password,
-      fullName: fullName.trim(),
-    });
+    const { error } = await supabase.auth.updateUser({ password });
     setSubmitting(false);
 
     if (error) {
       setErrors({ form: error.message });
-    } else {
-      // Supabase may require email confirmation before login is possible.
-      // Show a success message and redirect to login.
-      navigate("/login", {
-        replace: true,
-        state: {
-          message:
-            "Account created! Check your email for a confirmation link, then sign in.",
-        },
-      });
+      return;
     }
+
+    // Sign out all sessions after password reset.
+    await supabase.auth.signOut();
+    navigate("/login", {
+      replace: true,
+      state: { message: "Your password has been reset. Please sign in." },
+    });
+  }
+
+  if (!recovered) {
+    return (
+      <div className="auth-page">
+        <nav className="auth-nav">
+          <Link to="/" className="auth-nav__brand">
+            <span className="landing__logo" aria-hidden="true">✓</span>
+            <span>TaskFlow</span>
+          </Link>
+          <button
+            type="button"
+            className="icon-btn theme-toggle"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+        </nav>
+
+        <motion.div
+          className="auth-card"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <h1 className="auth-card__title">Invalid or expired link</h1>
+          <p className="auth-card__subtitle">
+            This password reset link is no longer valid. Request a new one.
+          </p>
+          <p className="auth-card__switch">
+            <Link to="/forgot-password" className="auth-card__link">
+              Request a new reset link
+            </Link>
+          </p>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -93,80 +133,41 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <h1 className="auth-card__title">Create your account</h1>
-        <p className="auth-card__subtitle">Start managing your tasks in seconds.</p>
+        <h1 className="auth-card__title">Choose a new password</h1>
+        <p className="auth-card__subtitle">
+          Enter your new password below.
+        </p>
 
         {errors.form && <div className="auth-card__error">{errors.form}</div>}
 
         <form onSubmit={handleSubmit} noValidate className="auth-form">
-          <div className="field">
-            <label htmlFor="fullName">Full name</label>
-            <input
-              id="fullName"
-              ref={nameRef}
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              aria-invalid={Boolean(errors.fullName)}
-              aria-describedby={errors.fullName ? "name-error" : undefined}
-              placeholder="Jane Doe"
-              autoComplete="name"
-            />
-            {errors.fullName && (
-              <p className="field__error" id="name-error">{errors.fullName}</p>
-            )}
-          </div>
-
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? "email-error" : undefined}
-              placeholder="you@example.com"
-              autoComplete="email"
-            />
-            {errors.email && (
-              <p className="field__error" id="email-error">{errors.email}</p>
-            )}
-          </div>
-
           <PasswordField
             id="password"
-            label="Password"
+            label="New password"
             value={password}
             onChange={setPassword}
             error={errors.password}
             placeholder="At least 8 characters"
             autoComplete="new-password"
+            autoFocus
           />
-
           <PasswordField
             id="confirmPassword"
-            label="Confirm password"
+            label="Confirm new password"
             value={confirmPassword}
             onChange={setConfirmPassword}
             error={errors.confirmPassword}
             placeholder="Re-enter your password"
             autoComplete="new-password"
           />
-
           <button
             type="submit"
             className="btn btn--primary btn--large btn--block"
             disabled={submitting}
           >
-            {submitting ? "Creating account…" : "Create account"}
+            {submitting ? "Updating…" : "Reset password"}
           </button>
         </form>
-
-        <p className="auth-card__switch">
-          Already have an account?{" "}
-          <Link to="/login" className="auth-card__link">Sign in</Link>
-        </p>
       </motion.div>
     </div>
   );

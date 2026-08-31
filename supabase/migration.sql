@@ -1,11 +1,11 @@
--- TaskFlow — Supabase database migration (v2)
+-- TaskFlow — Supabase database migration (v3)
 -- Run this in the Supabase SQL editor (Dashboard → SQL → New query)
 -- after creating your project. This creates the tasks table, profiles table,
--- avatar storage bucket, and Row Level Security policies.
+-- login verification tables, avatar storage bucket, and Row Level Security
+-- policies.
 --
--- If you already ran the original migration, this version is backward
--- compatible — it adds the profiles table and new policies without dropping
--- existing data.
+-- If you already ran v2, this version is backward compatible — it adds the
+-- verification tables and tightens RLS to require verified login sessions.
 
 -- ============================================================================
 -- PROFILES TABLE (must exist before any RLS or triggers reference it)
@@ -45,12 +45,60 @@ create table if not exists public.tasks (
 alter table public.tasks enable row level security;
 
 -- ============================================================================
+-- LOGIN VERIFICATION TABLES (server-managed, not directly client-accessible)
+-- ============================================================================
+
+create table if not exists public.login_verification_challenges (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  password_session_id text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '10 minutes',
+  consumed_at timestamptz
+);
+
+-- Disable RLS on challenges — only Edge Functions with service role access
+-- these. They are never queried from the browser.
+alter table public.login_verification_challenges disable row level security;
+
+create table if not exists public.verified_login_sessions (
+  session_id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  verified_at timestamptz not null default now(),
+  expires_at timestamptz not null default now() + interval '24 hours'
+);
+
+alter table public.verified_login_sessions disable row level security;
+
+-- ============================================================================
+-- HELPER FUNCTION: is_login_session_verified
+-- Returns true if the current JWT session_id has been verified.
+-- Used by RLS policies on tasks, profiles, and storage.
+-- ============================================================================
+
+create or replace function public.is_login_session_verified()
+returns boolean
+language sql
+security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.verified_login_sessions v
+    where v.session_id = (auth.jwt() ->> 'session_id')
+      and v.user_id = auth.uid()
+      and v.expires_at > now()
+  );
+$$;
+
+-- ============================================================================
 -- DROP OLD POLICIES (idempotent)
 -- ============================================================================
 
 drop policy if exists "Users can view own profile" on public.profiles;
 drop policy if exists "Users can update own profile" on public.profiles;
 drop policy if exists "Users can insert own profile" on public.profiles;
+drop policy if exists "Verified users can view own profile" on public.profiles;
+drop policy if exists "Verified users can update own profile" on public.profiles;
+drop policy if exists "Verified users can insert own profile" on public.profiles;
 
 drop policy if exists "Users can view own tasks" on public.tasks;
 drop policy if exists "Users can insert own tasks" on public.tasks;
@@ -60,53 +108,71 @@ drop policy if exists "Active users can view own tasks" on public.tasks;
 drop policy if exists "Active users can insert own tasks" on public.tasks;
 drop policy if exists "Active users can update own tasks" on public.tasks;
 drop policy if exists "Active users can delete own tasks" on public.tasks;
+drop policy if exists "Verified active users can view own tasks" on public.tasks;
+drop policy if exists "Verified active users can insert own tasks" on public.tasks;
+drop policy if exists "Verified active users can update own tasks" on public.tasks;
+drop policy if exists "Verified active users can delete own tasks" on public.tasks;
 
 -- ============================================================================
--- PROFILES RLS POLICIES
+-- PROFILES RLS POLICIES (require verified login session)
 -- ============================================================================
 
-create policy "Users can view own profile"
+create policy "Verified users can view own profile"
   on public.profiles for select
-  using (auth.uid() = id);
+  using (
+    auth.uid() = id
+    and public.is_login_session_verified()
+  );
 
-create policy "Users can insert own profile"
+create policy "Verified users can insert own profile"
   on public.profiles for insert
-  with check (auth.uid() = id);
+  with check (
+    auth.uid() = id
+    and public.is_login_session_verified()
+  );
 
-create policy "Users can update own profile"
+create policy "Verified users can update own profile"
   on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using (
+    auth.uid() = id
+    and public.is_login_session_verified()
+  )
+  with check (
+    auth.uid() = id
+    and public.is_login_session_verified()
+  );
 
 -- ============================================================================
--- TASKS RLS POLICIES
--- Only active (non-deactivated) users can access their own tasks.
+-- TASKS RLS POLICIES (require verified login session + active profile)
 -- ============================================================================
 
-create policy "Active users can view own tasks"
+create policy "Verified active users can view own tasks"
   on public.tasks for select
   using (
     auth.uid() = user_id
+    and public.is_login_session_verified()
     and coalesce(
       (select status from public.profiles where id = auth.uid()),
       'active'
     ) = 'active'
   );
 
-create policy "Active users can insert own tasks"
+create policy "Verified active users can insert own tasks"
   on public.tasks for insert
   with check (
     auth.uid() = user_id
+    and public.is_login_session_verified()
     and coalesce(
       (select status from public.profiles where id = auth.uid()),
       'active'
     ) = 'active'
   );
 
-create policy "Active users can update own tasks"
+create policy "Verified active users can update own tasks"
   on public.tasks for update
   using (
     auth.uid() = user_id
+    and public.is_login_session_verified()
     and coalesce(
       (select status from public.profiles where id = auth.uid()),
       'active'
@@ -114,16 +180,18 @@ create policy "Active users can update own tasks"
   )
   with check (
     auth.uid() = user_id
+    and public.is_login_session_verified()
     and coalesce(
       (select status from public.profiles where id = auth.uid()),
       'active'
     ) = 'active'
   );
 
-create policy "Active users can delete own tasks"
+create policy "Verified active users can delete own tasks"
   on public.tasks for delete
   using (
     auth.uid() = user_id
+    and public.is_login_session_verified()
     and coalesce(
       (select status from public.profiles where id = auth.uid()),
       'active'
@@ -183,35 +251,54 @@ drop policy if exists "Avatar upload own folder" on storage.objects;
 drop policy if exists "Avatar read own folder" on storage.objects;
 drop policy if exists "Avatar update own folder" on storage.objects;
 drop policy if exists "Avatar delete own folder" on storage.objects;
+drop policy if exists "Verified avatar upload own folder" on storage.objects;
+drop policy if exists "Verified avatar read own folder" on storage.objects;
+drop policy if exists "Verified avatar update own folder" on storage.objects;
+drop policy if exists "Verified avatar delete own folder" on storage.objects;
 
-create policy "Avatar upload own folder"
+create policy "Verified avatar upload own folder"
   on storage.objects for insert
   to authenticated
   with check (
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
+    and public.is_login_session_verified()
   );
 
-create policy "Avatar read own folder"
+create policy "Verified avatar read own folder"
   on storage.objects for select
   to authenticated
   using (
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
+    and public.is_login_session_verified()
   );
 
-create policy "Avatar update own folder"
+create policy "Verified avatar update own folder"
   on storage.objects for update
   to authenticated
   using (
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
+    and public.is_login_session_verified()
   );
 
-create policy "Avatar delete own folder"
+create policy "Verified avatar delete own folder"
   on storage.objects for delete
   to authenticated
   using (
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
+    and public.is_login_session_verified()
   );
+
+-- ============================================================================
+-- CLEANUP: Remove expired challenges and verified sessions periodically
+-- (Edge Functions also check expiry, but this keeps the tables small.)
+-- ============================================================================
+
+delete from public.login_verification_challenges
+  where expires_at < now() and consumed_at is null;
+
+delete from public.verified_login_sessions
+  where expires_at < now();
