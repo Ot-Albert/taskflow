@@ -195,43 +195,63 @@ export function AuthProvider({ children }) {
     return { data, error: null };
   }, []);
 
-  // Complete login verification — called with the 6-digit email code.
+  // Complete login verification — called with the email code.
+  // The client calls verifyOtp directly so the new OTP session is stored
+  // in the browser, then sends the new token to the Edge Function which
+  // records it as verified so RLS grants access.
   const completeLoginVerification = useCallback(
     async (code) => {
       if (!supabase) return { error: { message: "Auth not configured." } };
+      if (!pendingEmail) return { error: { message: "No pending login." } };
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      // Step 1: Verify the OTP on the client. This creates a new email-OTP
+      // session in the browser, replacing the password session.
+      const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+        email: pendingEmail,
+        token: String(code),
+        type: "email",
+      });
 
-      if (!accessToken) {
-        return { error: { message: "No active session." } };
+      if (otpError || !otpData?.session?.access_token) {
+        return {
+          error: {
+            message: otpError?.message || "Invalid or expired code.",
+          },
+        };
       }
 
+      const otpToken = otpData.session.access_token;
+
+      // Step 2: Send the new OTP token to the Edge Function so it can
+      // record the session as verified.
       try {
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/complete-login-verification`,
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               "Content-Type": "application/json",
               apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ otpToken }),
           }
         );
         const result = await response.json();
 
         if (result?.error) {
+          // The Edge Function rejected the challenge — sign out for safety.
+          await supabase.auth.signOut();
+          setAuthState("signed_out");
+          setPendingEmail(null);
           return { error: { message: result.error } };
         }
 
-        // Get the updated session after OTP verification.
+        // Step 3: The verified session is now in the browser and recorded
+        // server-side. Update state and check profile access.
         const { data: newData } = await supabase.auth.getSession();
         setSession(newData.session);
         setUser(newData.session?.user ?? null);
 
-        // Check profile status and verification.
         const verified = await checkVerified(newData.session);
         if (verified) {
           if (profileStatus === "deactivated") {
@@ -240,7 +260,6 @@ export function AuthProvider({ children }) {
             setAuthState("fully_verified");
           }
         } else {
-          // Verification succeeded but RLS still blocks — sign out.
           await supabase.auth.signOut();
           setAuthState("signed_out");
           return { error: { message: "Verification could not be confirmed." } };
@@ -252,7 +271,7 @@ export function AuthProvider({ children }) {
         return { error: { message: "Verification request failed." } };
       }
     },
-    [checkVerified, profileStatus]
+    [checkVerified, pendingEmail, profileStatus]
   );
 
   // Resend the login verification code.
