@@ -16,8 +16,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Decode a JWT payload (without verifying signature — Supabase already
-// validates the token before the function runs).
 function decodeJwtPayload(token) {
   try {
     const parts = token.split(".");
@@ -73,18 +71,12 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Fetch the user's email from Supabase Auth.
-    const { data: userData, error: userErr } =
-      await userClient.auth.getUser();
-
-    if (userErr || !userData?.user) {
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user?.email) {
       return json({ error: "Invalid session." }, 401);
     }
 
     const userEmail = userData.user.email;
-    if (!userEmail) {
-      return json({ error: "Incomplete session." }, 400);
-    }
 
     // Admin client for writing the challenge (RLS enabled, no policies).
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -111,9 +103,13 @@ Deno.serve(async (req) => {
       return json({ error: "Could not create verification challenge." }, 500);
     }
 
-    // Send the email OTP to the user. shouldCreateUser: false prevents
-    // creating a new account if the email somehow doesn't exist.
-    const { error: otpErr } = await userClient.auth.signInWithOtp({
+    // Send the email OTP to the user. signInWithOtp is a public endpoint
+    // so we use a fresh client to avoid session confusion.
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { error: otpErr } = await anonClient.auth.signInWithOtp({
       email: userEmail,
       options: {
         shouldCreateUser: false,

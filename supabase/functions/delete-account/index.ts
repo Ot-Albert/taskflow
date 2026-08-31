@@ -4,7 +4,7 @@
 //   supabase functions deploy delete-account --no-verify-jwt
 //
 // Set the service role key as a secret:
-//   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+//   supabase secrets set SERVICE_ROLE_KEY=your-service-role-key
 //
 // The service role key is NEVER exposed to the client. The client calls this
 // function with the user's session JWT, and the function re-verifies the
@@ -41,6 +41,11 @@ Deno.serve(async (req) => {
       return json({ error: "Missing authorization header." }, 401);
     }
 
+    const token = authHeader.replace("Bearer ", "");
+    const claims = decodeJwtPayload(token);
+    const sessionId = claims?.session_id;
+    const userId = claims?.sub;
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
@@ -60,19 +65,19 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid session." }, 401);
     }
 
-    const userId = userData.user.id;
+    const userIdFromToken = userData.user.id;
     const userEmail = userData.user.email;
 
-    // Decode the JWT to get the session_id.
-    const token = authHeader.replace("Bearer ", "");
-    const claims = decodeJwtPayload(token);
-    const sessionId = claims?.session_id;
+    if (userIdFromToken !== userId) {
+      return json({ error: "Session mismatch." }, 401);
+    }
 
-    // Require a verified login session before allowing deletion.
+    // Admin client (bypasses RLS) — used for verification checks and deletion.
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Require a verified login session before allowing deletion.
     if (sessionId) {
       const { data: verified } = await adminClient
         .from("verified_login_sessions")
@@ -109,9 +114,6 @@ Deno.serve(async (req) => {
     if (verifyErr) {
       return json({ error: "Password verification failed." }, 403);
     }
-
-    // Admin client (bypasses RLS) — used only for deletion.
-    // (Already created above for session verification.)
 
     // Delete avatar files from storage.
     const { data: files } = await adminClient.storage
