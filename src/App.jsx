@@ -4,6 +4,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import TaskApp from "./pages/TaskApp";
+import AccountDeactivated from "./pages/AccountDeactivated";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Redirect authenticated users away from auth pages.
@@ -38,6 +39,14 @@ export default function App() {
           <PublicOnlyRoute>
             <SignupPage />
           </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/deactivated"
+        element={
+          <ProtectedRoute>
+            <AccountDeactivated />
+          </ProtectedRoute>
         }
       />
       <Route

@@ -1,14 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import FilterBar from "../components/FilterBar";
 import TaskList from "../components/TaskList";
 import TaskForm from "../components/TaskForm";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
+import ProfilePanel from "../components/ProfilePanel";
 import { useTasks } from "../hooks/useTasks";
 import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
 import { useAuth } from "../hooks/useAuth";
+import { useProfile } from "../hooks/useProfile";
 import { PRIORITY_RANK, SORT_OPTIONS } from "../utils/constants";
 import { exportCSV, exportJSON } from "../utils/export";
 import "../App.css";
@@ -22,6 +25,8 @@ export default function TaskApp() {
     useTasks(userId);
   const { theme, toggleTheme } = useTheme();
   const { toast, show, dismiss } = useToast();
+  const profile = useProfile(user);
+  const navigate = useNavigate();
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sort, setSort] = useState(SORT_OPTIONS.DUE_DATE);
@@ -29,6 +34,7 @@ export default function TaskApp() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleFilterChange = useCallback((patch) => {
     setFilters((current) => ({ ...current, ...patch }));
@@ -117,16 +123,59 @@ export default function TaskApp() {
   }
 
   async function handleSignOut() {
+    setProfileOpen(false);
     await signOut();
   }
 
-  const hasCompleted = tasks.some((t) => t.status === "done");
-  const userName = user?.user_metadata?.full_name || user?.fullName || user?.email;
+  // Profile action handlers
+  async function handleUpdateName(newName) {
+    const { error } = await profile.updateName(newName);
+    if (error) show("Could not update name.", "error");
+    else show("Name updated.", "success");
+  }
 
-  if (loading) {
+  async function handleUploadAvatar(file) {
+    const { error } = await profile.uploadAvatar(file);
+    if (error) show(error.message || error, "error");
+    else show("Profile picture updated.", "success");
+  }
+
+  async function handleRemoveAvatar() {
+    const { error } = await profile.removeAvatar();
+    if (error) show("Could not remove picture.", "error");
+    else show("Profile picture removed.", "success");
+  }
+
+  async function handleDeactivate() {
+    const { error } = await profile.deactivateAccount();
+    if (error) {
+      show("Could not deactivate account.", "error");
+    } else {
+      show("Account deactivated.", "success");
+      setProfileOpen(false);
+      await signOut();
+      navigate("/login", { replace: true });
+    }
+  }
+
+  async function handleDeleteAccount(password, confirmPhrase) {
+    const { error } = await profile.deleteAccount(password, confirmPhrase);
+    if (error) {
+      show(error.message || error, "error");
+    } else {
+      show("Account deleted permanently.", "success");
+      setProfileOpen(false);
+      await signOut();
+      navigate("/", { replace: true });
+    }
+  }
+
+  const hasCompleted = tasks.some((t) => t.status === "done");
+
+  if (loading || profile.loading) {
     return (
       <div className="route-loading">
-        <div className="route-loading__spinner" aria-label="Loading tasks" />
+        <div className="route-loading__spinner" aria-label="Loading" />
       </div>
     );
   }
@@ -134,13 +183,12 @@ export default function TaskApp() {
   return (
     <div className="app">
       <Header
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        onExportJSON={handleExportJSON}
-        onExportCSV={handleExportCSV}
         taskCount={tasks.length}
-        userName={userName}
-        onSignOut={handleSignOut}
+        fullName={profile.fullName}
+        initials={profile.initials}
+        avatarUrl={profile.avatarUrl}
+        onOpenProfile={() => setProfileOpen(true)}
+        profileSaving={profile.saving}
       />
 
       <main className="app__main">
@@ -185,6 +233,28 @@ export default function TaskApp() {
       <footer className="app__footer">
         <p>TaskFlow — a personal task manager. Data is protected.</p>
       </footer>
+
+      <ProfilePanel
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        user={user}
+        profile={profile.profile}
+        fullName={profile.fullName}
+        initials={profile.initials}
+        avatarUrl={profile.avatarUrl}
+        saving={profile.saving}
+        onUpdateName={handleUpdateName}
+        onUploadAvatar={handleUploadAvatar}
+        onRemoveAvatar={handleRemoveAvatar}
+        onDeactivate={handleDeactivate}
+        onDelete={handleDeleteAccount}
+        onSignOut={handleSignOut}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onExportJSON={handleExportJSON}
+        onExportCSV={handleExportCSV}
+        taskCount={tasks.length}
+      />
 
       {formOpen && (
         <TaskForm

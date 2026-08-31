@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileStatus, setProfileStatus] = useState(null);
 
   // Restore session on mount.
   useEffect(() => {
@@ -21,15 +22,39 @@ export function AuthProvider({ children }) {
         if (!active) return;
         setSession(data.session);
         setUser(data.session?.user ?? null);
-        supabase.auth.onAuthStateChange((_event, newSession) => {
+
+        // Check profile status for deactivated accounts.
+        if (data.session?.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("status")
+            .eq("id", data.session.user.id)
+            .single();
+          if (!active) return;
+          setProfileStatus(profile?.status ?? "active");
+        }
+
+        supabase.auth.onAuthStateChange(async (_event, newSession) => {
           setSession(newSession);
           setUser(newSession?.user ?? null);
+
+          if (newSession?.user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("status")
+              .eq("id", newSession.user.id)
+              .single();
+            setProfileStatus(profile?.status ?? "active");
+          } else {
+            setProfileStatus(null);
+          }
         });
       } else {
         const { data } = localAuth.getSession();
         if (!active) return;
         setSession(data.session);
         setUser(data.session?.user ?? null);
+        setProfileStatus("active");
       }
       setLoading(false);
     }
@@ -47,6 +72,7 @@ export function AuthProvider({ children }) {
         password,
         options: { data: { full_name: fullName } },
       });
+      if (data?.user) setProfileStatus("active");
       return { data, error };
     }
     return localAuth.signUp({ email, password, fullName });
@@ -61,6 +87,14 @@ export function AuthProvider({ children }) {
       if (data?.user) {
         setUser(data.user);
         setSession(data.session);
+
+        // Check if the account is deactivated.
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("status")
+          .eq("id", data.user.id)
+          .single();
+        setProfileStatus(profile?.status ?? "active");
       }
       return { data, error };
     }
@@ -68,6 +102,7 @@ export function AuthProvider({ children }) {
     if (result.data?.user) {
       setUser(result.data.user);
       setSession(result.data.session);
+      setProfileStatus("active");
     }
     return result;
   }, []);
@@ -80,6 +115,7 @@ export function AuthProvider({ children }) {
     }
     setUser(null);
     setSession(null);
+    setProfileStatus(null);
   }, []);
 
   const value = {
@@ -90,6 +126,8 @@ export function AuthProvider({ children }) {
     signIn,
     signOut,
     isSupabaseConfigured,
+    profileStatus,
+    isDeactivated: profileStatus === "deactivated",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,12 +1,6 @@
-export default function Header({
-  theme,
-  onToggleTheme,
-  onExportJSON,
-  onExportCSV,
-  taskCount,
-  userName,
-  onSignOut,
-}) {
+import ProfileAvatar from "./ProfileAvatar";
+
+export default function Header({ taskCount, fullName, initials, avatarUrl, onOpenProfile, profileSaving }) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -22,48 +16,21 @@ export default function Header({
       </div>
 
       <div className="app-header__actions">
-        <div className="export-menu" role="group" aria-label="Export tasks">
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={onExportJSON}
-            disabled={taskCount === 0}
-          >
-            Export JSON
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={onExportCSV}
-            disabled={taskCount === 0}
-          >
-            Export CSV
-          </button>
-        </div>
-
-        {userName && (
-          <div className="app-header__user">
-            <span className="app-header__user-name" title={userName}>
-              {userName}
-            </span>
-            <button
-              type="button"
-              className="btn btn--ghost btn--small"
-              onClick={onSignOut}
-            >
-              Sign out
-            </button>
-          </div>
-        )}
-
         <button
           type="button"
-          className="icon-btn theme-toggle"
-          onClick={onToggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          className="app-header__profile-trigger"
+          onClick={onOpenProfile}
+          aria-label="Open profile and settings"
+          aria-haspopup="dialog"
+          aria-expanded={false}
         >
-          {theme === "dark" ? "☀" : "☾"}
+          <ProfileAvatar
+            avatarUrl={avatarUrl}
+            initials={initials}
+            fullName={fullName}
+            size="sm"
+            saving={profileSaving}
+          />
         </button>
       </div>
     </header>
