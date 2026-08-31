@@ -6,6 +6,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 
 const RESEND_COOLDOWN = 60; // seconds
+const OTP_MIN_LENGTH = 6;
+const OTP_MAX_LENGTH = 10;
 
 function maskEmail(email) {
   if (!email) return "";
@@ -55,14 +57,14 @@ export default function VerifyLoginPage() {
     async (e) => {
       e?.preventDefault();
       setError("");
-      const trimmed = code.trim();
-      if (!/^\d{6}$/.test(trimmed)) {
-        setError("Enter the 6-digit code from your email.");
+      const numeric = code.replace(/\D/g, "");
+      if (numeric.length < OTP_MIN_LENGTH || numeric.length > OTP_MAX_LENGTH) {
+        setError(`Enter the ${OTP_MIN_LENGTH}- to ${OTP_MAX_LENGTH}-digit code from your email.`);
         return;
       }
 
       setSubmitting(true);
-      const { error: err } = await completeLoginVerification(trimmed);
+      const { error: err } = await completeLoginVerification(numeric);
       setSubmitting(false);
 
       if (err) {
@@ -92,9 +94,11 @@ export default function VerifyLoginPage() {
     navigate("/login", { replace: true });
   }
 
-  // Handle paste of 6-digit code.
+  // Handle paste and input of the numeric verification code.
+  // Supabase email OTP length can vary (6-10 digits), so the client
+  // accepts whatever length the server sends and strips non-digits.
   function handleCodeChange(e) {
-    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+    const val = e.target.value.replace(/\D/g, "").slice(0, OTP_MAX_LENGTH);
     setCode(val);
   }
 
@@ -125,7 +129,7 @@ export default function VerifyLoginPage() {
       >
         <h1 className="auth-card__title">Enter verification code</h1>
         <p className="auth-card__subtitle">
-          We sent a 6-digit code to <strong>{maskEmail(pendingEmail)}</strong>.
+          We sent a code to <strong>{maskEmail(pendingEmail)}</strong>.
           Enter it below to complete sign-in.
         </p>
 
@@ -139,8 +143,8 @@ export default function VerifyLoginPage() {
               ref={inputRef}
               type="text"
               inputMode="numeric"
-              pattern="\d{6}"
-              maxLength={6}
+              pattern={`\\d{${OTP_MIN_LENGTH},${OTP_MAX_LENGTH}}`}
+              maxLength={OTP_MAX_LENGTH}
               value={code}
               onChange={handleCodeChange}
               placeholder="000000"
@@ -153,7 +157,7 @@ export default function VerifyLoginPage() {
           <button
             type="submit"
             className="btn btn--primary btn--large btn--block"
-            disabled={submitting || code.length !== 6}
+            disabled={submitting || code.length < OTP_MIN_LENGTH || code.length > OTP_MAX_LENGTH}
           >
             {submitting ? "Verifying…" : "Verify and continue"}
           </button>
