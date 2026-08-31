@@ -16,6 +16,19 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Decode a JWT payload (without verifying signature — Supabase already
+// validates the token before the function runs).
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -25,6 +38,26 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return json({ error: "Missing authorization header." }, 401);
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const claims = decodeJwtPayload(token);
+    if (!claims) {
+      return json({ error: "Invalid token." }, 401);
+    }
+
+    const sessionId = claims.session_id;
+    const userId = claims.sub;
+    const amr = claims.amr || [];
+    const methods = amr.map((a) => a.method);
+
+    if (!sessionId || !userId) {
+      return json({ error: "Incomplete session." }, 400);
+    }
+
+    // Ensure this is a password-authenticated session.
+    if (!methods.includes("password")) {
+      return json({ error: "Password authentication required." }, 403);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -40,6 +73,7 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
+    // Fetch the user's email from Supabase Auth.
     const { data: userData, error: userErr } =
       await userClient.auth.getUser();
 
@@ -47,15 +81,12 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid session." }, 401);
     }
 
-    const userId = userData.user.id;
     const userEmail = userData.user.email;
-    const sessionId = userData.user.session_id;
-
-    if (!userEmail || !sessionId) {
+    if (!userEmail) {
       return json({ error: "Incomplete session." }, 400);
     }
 
-    // Admin client for writing the challenge (RLS disabled on this table).
+    // Admin client for writing the challenge (RLS enabled, no policies).
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });

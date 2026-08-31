@@ -17,6 +17,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -47,19 +58,30 @@ Deno.serve(async (req) => {
       return json({ error: "Verification code is required." }, 400);
     }
 
-    // Get the current user before OTP verification.
-    const { data: preUserData, error: preUserErr } =
+    // Decode the current JWT to get session_id and user_id.
+    const token = authHeader.replace("Bearer ", "");
+    const claims = decodeJwtPayload(token);
+    if (!claims) {
+      return json({ error: "Invalid token." }, 401);
+    }
+
+    const passwordSessionId = claims.session_id;
+    const userId = claims.sub;
+
+    if (!passwordSessionId || !userId) {
+      return json({ error: "Incomplete session." }, 400);
+    }
+
+    // Get the user's email.
+    const { data: userData, error: userErr } =
       await userClient.auth.getUser();
 
-    if (preUserErr || !preUserData?.user) {
+    if (userErr || !userData?.user) {
       return json({ error: "Invalid session." }, 401);
     }
 
-    const userId = preUserData.user.id;
-    const userEmail = preUserData.user.email;
-    const passwordSessionId = preUserData.user.session_id;
-
-    if (!userEmail || !passwordSessionId) {
+    const userEmail = userData.user.email;
+    if (!userEmail) {
       return json({ error: "Incomplete session." }, 400);
     }
 
@@ -101,15 +123,15 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    // Get the new session after OTP verification.
-    const { data: postData, error: postErr } =
-      await userClient.auth.getUser();
-
-    if (postErr || !postData?.user) {
+    // Get the new session after OTP verification to extract the new
+    // session_id from the JWT.
+    const { data: newSessionData } = await userClient.auth.getSession();
+    if (!newSessionData?.session?.access_token) {
       return json({ error: "Session lost after verification." }, 401);
     }
 
-    const newSessionId = postData.user.session_id;
+    const newClaims = decodeJwtPayload(newSessionData.session.access_token);
+    const newSessionId = newClaims?.session_id;
 
     if (!newSessionId) {
       return json({ error: "Could not determine verified session." }, 500);

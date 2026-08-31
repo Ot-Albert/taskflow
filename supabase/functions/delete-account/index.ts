@@ -12,6 +12,17 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -51,7 +62,11 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
     const userEmail = userData.user.email;
-    const sessionId = userData.user.session_id;
+
+    // Decode the JWT to get the session_id.
+    const token = authHeader.replace("Bearer ", "");
+    const claims = decodeJwtPayload(token);
+    const sessionId = claims?.session_id;
 
     // Require a verified login session before allowing deletion.
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -70,6 +85,8 @@ Deno.serve(async (req) => {
       if (!verified) {
         return json({ error: "Login verification required." }, 403);
       }
+    } else {
+      return json({ error: "Login verification required." }, 403);
     }
 
     // Parse request body.

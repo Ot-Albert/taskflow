@@ -57,9 +57,9 @@ create table if not exists public.login_verification_challenges (
   consumed_at timestamptz
 );
 
--- Disable RLS on challenges — only Edge Functions with service role access
--- these. They are never queried from the browser.
-alter table public.login_verification_challenges disable row level security;
+-- Enable RLS on challenges with NO policies — this blocks all browser
+-- access. Only Edge Functions with the service role key can read/write.
+alter table public.login_verification_challenges enable row level security;
 
 create table if not exists public.verified_login_sessions (
   session_id text primary key,
@@ -68,7 +68,8 @@ create table if not exists public.verified_login_sessions (
   expires_at timestamptz not null default now() + interval '24 hours'
 );
 
-alter table public.verified_login_sessions disable row level security;
+-- Same: RLS enabled with no policies = no client access, service role only.
+alter table public.verified_login_sessions enable row level security;
 
 -- ============================================================================
 -- HELPER FUNCTION: is_login_session_verified

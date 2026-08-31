@@ -6,6 +6,33 @@ import { supabase, isSupabaseConfigured } from "../lib/supabaseClient";
 //         fully_verified, password_recovery, deactivated
 const AuthContext = createContext(null);
 
+// Decode a JWT payload (without verifying signature).
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
+// Extract session_id from a Supabase session's access token.
+function getSessionId(session) {
+  if (!session?.access_token) return null;
+  const claims = decodeJwtPayload(session.access_token);
+  return claims?.session_id ?? null;
+}
+
+// Extract AMR methods from a Supabase session's access token.
+function getAuthMethods(session) {
+  if (!session?.access_token) return [];
+  const claims = decodeJwtPayload(session.access_token);
+  const amr = claims?.amr || [];
+  return amr.map((a) => a.method);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -14,15 +41,11 @@ export function AuthProvider({ children }) {
   const [authState, setAuthState] = useState("loading");
   const [pendingEmail, setPendingEmail] = useState(null);
 
-  // Check if the current session is verified.
+  // Check if the current session is verified by attempting a profile read.
+  // If RLS allows the read, the session is verified. If not, it isn't.
   const checkVerified = useCallback(async (currentSession) => {
     if (!currentSession?.user || !supabase) return false;
-    const sessionId = currentSession.user.session_id;
-    if (!sessionId) return false;
 
-    // We can't query verified_login_sessions directly (RLS disabled, no
-    // client access). Instead, try a lightweight profile read — if RLS
-    // allows it, the session is verified.
     const { data, error } = await supabase
       .from("profiles")
       .select("status")
@@ -57,25 +80,22 @@ export function AuthProvider({ children }) {
         if (!active) return;
 
         if (verified) {
-          // Check if the user is deactivated.
           if (profileStatus === "deactivated") {
             setAuthState("deactivated");
           } else {
             setAuthState("fully_verified");
           }
         } else {
-          // Has a session but not verified — could be a password session
-          // awaiting verification, or a recovery session.
-          // Check the AMR (Authentication Methods Reference) to determine.
-          const amr = data.session.user?.amr;
-          const methods = amr?.map((a) => a.method) || [];
+          // Has a session but not verified — determine the session type
+          // from the JWT's AMR (Authentication Methods Reference).
+          const methods = getAuthMethods(data.session);
 
           if (methods.includes("recovery")) {
             setAuthState("password_recovery");
           } else if (methods.includes("password")) {
             // Password session without verification — needs email code.
             setPendingEmail(data.session.user.email);
-            setAuthState("password_verified");
+            setAuthState("awaiting_email_code");
           } else {
             // Unknown session type — sign out for safety.
             await supabase.auth.signOut();
@@ -155,14 +175,12 @@ export function AuthProvider({ children }) {
         );
         const result = await response.json();
         if (result?.error) {
-          // The challenge couldn't be created — sign out and return error.
           await supabase.auth.signOut();
           setAuthState("signed_out");
           setPendingEmail(null);
           return { data: null, error: { message: result.error } };
         }
-      } catch (_err) {
-        // Network or function error — sign out for safety.
+      } catch {
         await supabase.auth.signOut();
         setAuthState("signed_out");
         setPendingEmail(null);
@@ -230,7 +248,7 @@ export function AuthProvider({ children }) {
 
         setPendingEmail(null);
         return { error: null };
-      } catch (_err) {
+      } catch {
         return { error: { message: "Verification request failed." } };
       }
     },
@@ -266,7 +284,7 @@ export function AuthProvider({ children }) {
         return { error: { message: result.error } };
       }
       return { error: null };
-    } catch (_err) {
+    } catch {
       return { error: { message: "Could not resend code." } };
     }
   }, []);
