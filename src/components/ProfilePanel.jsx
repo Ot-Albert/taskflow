@@ -26,6 +26,8 @@ export default function ProfilePanel({
   onExportJSON,
   onExportCSV,
   taskCount,
+  reminderOffset,
+  onUpdateReminderOffset,
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(fullName);
@@ -197,6 +199,28 @@ export default function ProfilePanel({
             <span className="profile-panel__item-icon" aria-hidden="true">⏻</span>
             <span>Sign out</span>
           </button>
+        </div>
+
+        {/* Reminder preferences */}
+        <div className="profile-panel__section">
+          <p className="profile-panel__section-label">Reminders</p>
+          <div className="profile-panel__reminder-setting">
+            <label htmlFor="reminder-offset" className="profile-panel__reminder-label">
+              Notify me before due date
+            </label>
+            <select
+              id="reminder-offset"
+              className="profile-panel__select"
+              value={reminderOffset ?? 1440}
+              onChange={(e) => onUpdateReminderOffset(Number(e.target.value))}
+              disabled={saving}
+            >
+              <option value={60}>1 hour before</option>
+              <option value={1440}>1 day before</option>
+              <option value={4320}>3 days before</option>
+              <option value={10080}>1 week before</option>
+            </select>
+          </div>
         </div>
 
         {/* Danger zone */}

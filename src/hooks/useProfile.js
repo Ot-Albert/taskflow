@@ -293,6 +293,35 @@ export function useProfile(user) {
     [userId]
   );
 
+  const updateReminderOffset = useCallback(
+    async (offsetMinutes) => {
+      if (!userId || !supabase) return { error: "Not available." };
+      setSaving(true);
+      setError(null);
+
+      const { data, error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          reminder_offset: offsetMinutes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
+        .select()
+        .single();
+
+      setSaving(false);
+
+      if (updateErr) {
+        setError("Could not update reminder setting.");
+        return { error: updateErr };
+      }
+
+      setProfile(data);
+      return { error: null };
+    },
+    [userId]
+  );
+
   const isDeactivated = profile?.status === "deactivated";
 
   return {
@@ -304,9 +333,11 @@ export function useProfile(user) {
     saving,
     error,
     isDeactivated,
+    reminderOffset: profile?.reminder_offset ?? 1440,
     updateName,
     uploadAvatar,
     removeAvatar,
+    updateReminderOffset,
     deactivateAccount,
     reactivateAccount,
     deleteAccount,

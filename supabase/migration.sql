@@ -303,3 +303,105 @@ delete from public.login_verification_challenges
 
 delete from public.verified_login_sessions
   where expires_at < now();
+
+-- ============================================================================
+-- NOTIFICATIONS TABLE
+-- In-app notifications for task reminders and other alerts.
+-- ============================================================================
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  task_id uuid references public.tasks(id) on delete cascade,
+  title text not null,
+  body text not null default '',
+  type text not null default 'reminder',
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can view own notifications" on public.notifications;
+drop policy if exists "Users can update own notifications" on public.notifications;
+drop policy if exists "Users can delete own notifications" on public.notifications;
+
+create policy "Users can view own notifications"
+  on public.notifications for select
+  using (
+    auth.uid() = user_id
+    and public.is_login_session_verified()
+  );
+
+create policy "Users can update own notifications"
+  on public.notifications for update
+  using (
+    auth.uid() = user_id
+    and public.is_login_session_verified()
+  )
+  with check (
+    auth.uid() = user_id
+    and public.is_login_session_verified()
+  );
+
+create policy "Users can delete own notifications"
+  on public.notifications for delete
+  using (
+    auth.uid() = user_id
+    and public.is_login_session_verified()
+  );
+
+create index if not exists notifications_user_id_idx on public.notifications(user_id);
+create index if not exists notifications_unread_idx on public.notifications(user_id) where read = false;
+
+-- ============================================================================
+-- REMINDER PREFERENCES & TASK REMINDER TRACKING
+-- ============================================================================
+
+-- Add reminder_offset to profiles (in minutes, default 1440 = 1 day).
+alter table public.profiles
+  add column if not exists reminder_offset integer not null default 1440;
+
+-- Add last_reminded_at to tasks to prevent duplicate reminders.
+alter table public.tasks
+  add column if not exists last_reminded_at timestamptz;
+
+-- ============================================================================
+-- PG_CRON: Schedule the reminder Edge Function
+-- Runs every 15 minutes. Invokes the send-task-reminders function.
+-- ============================================================================
+
+-- Enable pg_cron extension if not already enabled.
+create extension if not exists pg_cron with schema extensions;
+
+-- Schedule the reminder function (every 15 minutes).
+-- The cron job calls the Edge Function via the Supabase functions endpoint.
+do $$
+begin
+  -- Remove old schedule if it exists.
+  if exists (
+    select 1 from cron.jobs where jobname = 'send-task-reminders'
+  ) then
+    perform cron.unschedule('send-task-reminders');
+  end if;
+
+  -- Schedule new job. Uses the Supabase internal HTTP endpoint.
+  perform cron.schedule(
+    'send-task-reminders',
+    '*/15 * * * *',
+    $cmd$
+      select net.http_post(
+        url := current_setting('app.functions_url') || '/send-task-reminders',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        ),
+        body := '{}'::jsonb
+      )
+    $cmd$
+  );
+exception when others then
+  -- pg_cron may not be available on all plans; ignore silently.
+  raise notice 'Could not schedule cron job: %', SQLERRM;
+end
+$$;

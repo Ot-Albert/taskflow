@@ -1,4 +1,7 @@
+import { useState, useRef } from "react";
 import ProfileAvatar from "./ProfileAvatar";
+import NotificationBell from "./NotificationBell";
+import NotificationPanel from "./NotificationPanel";
 
 export default function Header({
   taskCount,
@@ -8,7 +11,15 @@ export default function Header({
   onOpenProfile,
   profileSaving,
   profileOpen,
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDeleteNotification,
 }) {
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
+
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -24,6 +35,23 @@ export default function Header({
       </div>
 
       <div className="app-header__actions">
+        <div className="notification-wrapper" ref={notifRef}>
+          <NotificationBell
+            unreadCount={unreadCount}
+            onToggle={() => setNotifOpen((v) => !v)}
+            open={notifOpen}
+            containerRef={notifRef}
+          />
+          <NotificationPanel
+            open={notifOpen}
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={onMarkAsRead}
+            onMarkAllAsRead={onMarkAllAsRead}
+            onDelete={onDeleteNotification}
+            onClose={() => setNotifOpen(false)}
+          />
+        </div>
         <ProfileAvatar
           avatarUrl={avatarUrl}
           initials={initials}

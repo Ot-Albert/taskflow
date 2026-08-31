@@ -12,6 +12,7 @@ import { useTheme } from "../hooks/useTheme";
 import { useToast } from "../hooks/useToast";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
+import { useNotifications } from "../hooks/useNotifications";
 import { PRIORITY_RANK, SORT_OPTIONS } from "../utils/constants";
 import { exportCSV, exportJSON } from "../utils/export";
 import "../App.css";
@@ -26,6 +27,7 @@ export default function TaskApp() {
   const { theme, toggleTheme } = useTheme();
   const { toast, show, dismiss } = useToast();
   const profile = useProfile(user);
+  const notifications = useNotifications(userId);
   const navigate = useNavigate();
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -146,6 +148,12 @@ export default function TaskApp() {
     else show("Profile picture removed.", "success");
   }
 
+  async function handleUpdateReminderOffset(offsetMinutes) {
+    const { error } = await profile.updateReminderOffset(offsetMinutes);
+    if (error) show("Could not update reminder setting.", "error");
+    else show("Reminder preference updated.", "success");
+  }
+
   async function handleDeactivate() {
     const { error } = await profile.deactivateAccount();
     if (error) {
@@ -190,6 +198,11 @@ export default function TaskApp() {
         onOpenProfile={() => setProfileOpen(true)}
         profileSaving={profile.saving}
         profileOpen={profileOpen}
+        notifications={notifications.notifications}
+        unreadCount={notifications.unreadCount}
+        onMarkAsRead={notifications.markAsRead}
+        onMarkAllAsRead={notifications.markAllAsRead}
+        onDeleteNotification={notifications.deleteNotification}
       />
 
       <main className="app__main">
@@ -255,6 +268,8 @@ export default function TaskApp() {
         onExportJSON={handleExportJSON}
         onExportCSV={handleExportCSV}
         taskCount={tasks.length}
+        reminderOffset={profile.reminderOffset}
+        onUpdateReminderOffset={handleUpdateReminderOffset}
       />
 
       {formOpen && (
