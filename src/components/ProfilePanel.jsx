@@ -48,21 +48,24 @@ export default function ProfilePanel({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
-  // Close on outside click (desktop popover).
+  // Close on outside click/touch (desktop and mobile).
+  // Use pointerdown so it works for mouse, touch, and pen.
   useEffect(() => {
     if (!open) return;
-    function handleClick(e) {
+
+    function handlePointer(e) {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
         onClose();
       }
     }
-    // Delay to avoid the opening click itself.
+
+    // Defer slightly to avoid capturing the same event that opened the panel.
     const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClick);
-    }, 0);
+      document.addEventListener("pointerdown", handlePointer);
+    }, 50);
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("pointerdown", handlePointer);
     };
   }, [open, onClose]);
 

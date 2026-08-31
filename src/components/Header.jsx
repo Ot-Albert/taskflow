@@ -1,6 +1,14 @@
 import ProfileAvatar from "./ProfileAvatar";
 
-export default function Header({ taskCount, fullName, initials, avatarUrl, onOpenProfile, profileSaving }) {
+export default function Header({
+  taskCount,
+  fullName,
+  initials,
+  avatarUrl,
+  onOpenProfile,
+  profileSaving,
+  profileOpen,
+}) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -16,22 +24,17 @@ export default function Header({ taskCount, fullName, initials, avatarUrl, onOpe
       </div>
 
       <div className="app-header__actions">
-        <button
-          type="button"
-          className="app-header__profile-trigger"
+        <ProfileAvatar
+          avatarUrl={avatarUrl}
+          initials={initials}
+          fullName={fullName}
           onClick={onOpenProfile}
+          size="sm"
+          saving={profileSaving}
           aria-label="Open profile and settings"
+          aria-expanded={profileOpen}
           aria-haspopup="dialog"
-          aria-expanded={false}
-        >
-          <ProfileAvatar
-            avatarUrl={avatarUrl}
-            initials={initials}
-            fullName={fullName}
-            size="sm"
-            saving={profileSaving}
-          />
-        </button>
+        />
       </div>
     </header>
   );

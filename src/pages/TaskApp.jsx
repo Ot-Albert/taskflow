@@ -189,6 +189,7 @@ export default function TaskApp() {
         avatarUrl={profile.avatarUrl}
         onOpenProfile={() => setProfileOpen(true)}
         profileSaving={profile.saving}
+        profileOpen={profileOpen}
       />
 
       <main className="app__main">

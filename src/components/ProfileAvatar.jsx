@@ -3,21 +3,31 @@ import { useRef } from "react";
 /**
  * Circular avatar with image or initials fallback.
  * When `editable` is true, clicking triggers a file upload.
+ * When `onClick` is provided without `editable`, it acts as a plain trigger.
  */
 export default function ProfileAvatar({
   avatarUrl,
   initials,
   fullName,
   editable = false,
+  onClick,
   onUpload,
   onRemove,
   size = "md",
   saving = false,
+  "aria-label": ariaLabel,
+  "aria-expanded": ariaExpanded,
+  "aria-haspopup": ariaHaspopup,
 }) {
   const inputRef = useRef(null);
 
   function handleClick() {
-    if (editable && !saving) inputRef.current?.click();
+    if (saving) return;
+    if (editable) {
+      inputRef.current?.click();
+    } else if (onClick) {
+      onClick();
+    }
   }
 
   async function handleFileChange(e) {
@@ -37,12 +47,15 @@ export default function ProfileAvatar({
         type="button"
         className="profile-avatar__button"
         onClick={handleClick}
-        disabled={!editable || saving}
+        disabled={saving}
         aria-label={
-          editable
+          ariaLabel ??
+          (editable
             ? `Change profile picture for ${fullName}`
-            : `Profile picture for ${fullName}`
+            : `Open profile for ${fullName}`)
         }
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHaspopup}
         title={editable ? "Click to change picture" : undefined}
       >
         {avatarUrl ? (
