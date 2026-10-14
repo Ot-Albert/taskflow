@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
       return json({ error: "Incomplete verification session." }, 400);
     }
 
-    // Ensure the token was created via email OTP.
-    if (!otpAmr.some((a) => a.method === "email" || a.method === "otp")) {
+    // Ensure the token was created via email OTP / magiclink.
+    if (!otpAmr.some((a) => a.method === "email" || a.method === "otp" || a.method === "magiclink")) {
       return json({ error: "OTP authentication required." }, 403);
     }
 

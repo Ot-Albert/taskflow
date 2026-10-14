@@ -37,16 +37,14 @@ export default function LoginPage() {
     if (Object.keys(fieldErrors).length > 0) return;
 
     setSubmitting(true);
-    const { error, requiresVerification } = await signIn({ email: email.trim(), password });
+    const { error } = await signIn({ email: email.trim(), password });
     setSubmitting(false);
 
-    if (error && requiresVerification !== true) {
+    if (error) {
       setErrors({ form: error.message });
-    } else if (requiresVerification === false) {
-      navigate(from, { replace: true });
     } else {
-      // After password verification, navigate to the verification page if required.
-      navigate("/verify-login", { replace: true, state: { from, initialError: error?.message } });
+      // After password verification, navigate to the verification page.
+      navigate("/verify-login", { replace: true, state: { from } });
     }
   }
 

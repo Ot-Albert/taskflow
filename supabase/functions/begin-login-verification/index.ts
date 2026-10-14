@@ -109,11 +109,21 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    const clientOrigin = req.headers.get("origin") || req.headers.get("referer") || "";
+    let emailRedirectTo: string | undefined;
+    if (clientOrigin) {
+      try {
+        emailRedirectTo = `${new URL(clientOrigin).origin}/verify-login`;
+      } catch {
+        // Fall back to undefined if origin cannot be parsed
+      }
+    }
+
     const { error: otpErr } = await anonClient.auth.signInWithOtp({
       email: userEmail,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: `${new URL(req.url).origin}/verify-login`,
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
     });
 
