@@ -45,10 +45,10 @@ and start adding tasks.
 
 ### Nice-to-haves (included)
 
-- **Dark / light mode toggle** — a gold-and-black palette in both modes,
-  defaults to OS preference, persisted to `localStorage`, applied via
-  `data-theme` on `<html>`. Native controls follow each mode via
-  `color-scheme`, and the browser chrome matches via `theme-color` meta tags.
+- **Dark / light mode (System, Light, Dark)** — a gold-and-black palette in both modes,
+  defaults to OS preference with live system theme updates, persisted to `localStorage`,
+  applied via `data-theme` on `<html>` before initial paint to prevent flash. Native controls
+  follow each mode via `color-scheme`, and the browser chrome matches via `theme-color` meta tags.
 - **Drag-and-drop reordering** — native HTML5 DnD plus up/down arrow buttons
   for keyboard and touch users. Manual reordering is honoured when no
   automatic sort is overriding it (see the *Reordering* note below).
@@ -72,7 +72,7 @@ and start adding tasks.
    (`PRIORITIES`, `STATUSES`) in one place (`src/utils/constants.js`) so no
    string literals are hard coded anywhere else.
 3. **State & persistence layer** — built `useTasks` (CRUD + reorder + persist)
-   and `useTheme` before any UI, so components could stay thin.
+   and `useTheme` provider before any UI, so components could stay thin.
 4. **Validation as pure functions** — `src/utils/validation.js` returns an
    error map; trivially testable and reused by the form on every keystroke.
 5. **UI in vertical slices** — `TaskForm` → `TaskItem` / `TaskList` →
@@ -91,7 +91,7 @@ src/
 ├── App.css               # All component styles (CSS variables, responsive)
 ├── index.css             # Design tokens + gold/black theme variables + base reset
 ├── components/
-│   ├── Header.jsx        # Brand, export buttons, theme toggle
+│   ├── Header.jsx        # Brand, notification bell, profile trigger
 │   ├── FilterBar.jsx     # Search + status/priority filters + sort
 │   ├── TaskList.jsx      # List container, owns DnD state, renders EmptyState
 │   ├── TaskItem.jsx      # Single task row (badges, actions, draggable)
@@ -101,7 +101,7 @@ src/
 │   └── Toast.jsx         # Transient feedback notification
 ├── hooks/
 │   ├── useTasks.js       # Task store: CRUD, reorder, localStorage persistence
-│   ├── useTheme.js       # Theme state + <html data-theme> sync
+│   ├── useTheme.jsx      # Theme provider/context + <html data-theme> sync
 │   └── useToast.js       # Single active toast with auto-dismiss
 └── utils/
     ├── constants.js      # Enums, labels, storage keys, sort options
@@ -215,11 +215,14 @@ giving keyboard/touch parity.
 > arrangement. A future improvement would add a "Manual order" sort mode that
 > respects the `order` field (see *What I would improve*).
 
-### Theming (`src/hooks/useTheme.js`, `src/index.css`)
+### Theming (`src/hooks/useTheme.jsx`, `src/index.css`)
 
-`useTheme` reads any stored preference, falls back to
-`prefers-color-scheme: dark`, and writes `data-theme` onto `<html>` in an
-effect. `index.css` defines two gold-and-black token blocks:
+`ThemeProvider` manages theme preferences (`system`, `light`, or `dark`). When set to
+`system`, it automatically tracks the OS color scheme in real time via
+`prefers-color-scheme`. It writes `data-theme` onto `<html>` and updates the
+`theme-color` meta tag. An inline pre-paint script in `index.html` resolves and applies
+the theme attribute before CSS renders, preventing any flash on initial load.
+`index.css` defines two gold-and-black token blocks:
 `:root[data-theme="light"]` (warm ivory base, cream surfaces, near-black
 text, matte gold `#C9A227` accents) and `:root[data-theme="dark"]`
 (near-black base, layered charcoal surfaces, warm ivory text, brighter gold

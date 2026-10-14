@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../hooks/useTheme";
 
 const RESEND_COOLDOWN = 60; // seconds
 const OTP_MIN_LENGTH = 6;
@@ -23,7 +22,6 @@ function maskEmail(email) {
 export default function VerifyLoginPage() {
   const { pendingEmail, completeLoginVerification, resendLoginCode, cancelPendingLogin } =
     useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/app";
@@ -111,14 +109,6 @@ export default function VerifyLoginPage() {
           <span className="landing__logo" aria-hidden="true">✓</span>
           <span>TaskFlow</span>
         </Link>
-        <button
-          type="button"
-          className="icon-btn theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
       </nav>
 
       <motion.div

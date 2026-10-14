@@ -39,5 +39,5 @@ export const SORT_OPTIONS = {
 
 export const STORAGE_KEYS = {
   TASKS: "taskflow.tasks.v1",
-  THEME: "taskflow.theme.v1",
+  THEME: "taskflow.theme.v2", // Note: key duplicated in index.html pre-paint script
 };

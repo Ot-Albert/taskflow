@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useTheme } from "../hooks/useTheme";
 
 // Framer Motion variants for staggered reveals.
 const container = {
@@ -50,8 +49,6 @@ const features = [
 ];
 
 export default function LandingPage() {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <div className="landing">
       {/* Nav */}
@@ -66,14 +63,6 @@ export default function LandingPage() {
           <span className="landing__nav-title">TaskFlow</span>
         </div>
         <div className="landing__nav-actions">
-          <button
-            type="button"
-            className="icon-btn theme-toggle"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          >
-            {theme === "dark" ? "☀" : "☾"}
-          </button>
           <Link to="/login" className="btn btn--ghost">
             Sign in
           </Link>

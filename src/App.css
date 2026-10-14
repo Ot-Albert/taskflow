@@ -185,10 +185,6 @@
   cursor: not-allowed;
 }
 
-.theme-toggle {
-  font-size: 1.1rem;
-}
-
 /* ---------- Toolbar ---------- */
 .app__toolbar {
   display: flex;
@@ -1081,11 +1077,6 @@
     padding: 0.4rem 0.65rem;
     font-size: 0.82rem;
   }
-  .landing__nav-actions .icon-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
   .landing__hero {
     padding: 1rem 1rem 3rem;
   }
@@ -1147,11 +1138,6 @@
   .landing__nav-actions .btn {
     padding: 0.35rem 0.5rem;
     font-size: 0.78rem;
-  }
-  .landing__nav-actions .icon-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
   }
   .landing__hero {
     padding: 0.5rem 0.75rem 2rem;
@@ -1933,10 +1919,12 @@
   padding: 0 0.25rem;
 }
 
+.profile-panel__setting,
 .profile-panel__reminder-setting {
   padding: 0 0.5rem;
 }
 
+.profile-panel__setting-label,
 .profile-panel__reminder-label {
   display: block;
   font-size: 0.85rem;

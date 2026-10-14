@@ -2,10 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
-import { useTheme } from "../hooks/useTheme";
 
 export default function ForgotPasswordPage() {
-  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -47,14 +45,6 @@ export default function ForgotPasswordPage() {
           <span className="landing__logo" aria-hidden="true">✓</span>
           <span>TaskFlow</span>
         </Link>
-        <button
-          type="button"
-          className="icon-btn theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
       </nav>
 
       <motion.div

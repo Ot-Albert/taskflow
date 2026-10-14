@@ -2,13 +2,11 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfile";
-import { useTheme } from "../hooks/useTheme";
 import { useState } from "react";
 
 export default function AccountDeactivated() {
   const { user, signOut } = useAuth();
   const { reactivateAccount, saving } = useProfile(user);
-  const { theme, toggleTheme } = useTheme();
   const [error, setError] = useState("");
   const [reactivated, setReactivated] = useState(false);
 
@@ -35,14 +33,6 @@ export default function AccountDeactivated() {
           <span className="landing__logo" aria-hidden="true">✓</span>
           <span>TaskFlow</span>
         </Link>
-        <button
-          type="button"
-          className="icon-btn theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
       </nav>
 
       <motion.div

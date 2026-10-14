@@ -24,7 +24,7 @@ export default function TaskApp() {
   const userId = user?.id;
   const { tasks, loading, addTask, updateTask, deleteTask, reorderTask, clearCompleted } =
     useTasks(userId);
-  const { theme, toggleTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
   const { toast, show, dismiss } = useToast();
   const profile = useProfile(user);
   const notifications = useNotifications(userId);
@@ -263,8 +263,8 @@ export default function TaskApp() {
         onDeactivate={handleDeactivate}
         onDelete={handleDeleteAccount}
         onSignOut={handleSignOut}
-        theme={theme}
-        onToggleTheme={toggleTheme}
+        themePreference={preference}
+        onChangeThemePreference={setPreference}
         onExportJSON={handleExportJSON}
         onExportCSV={handleExportCSV}
         taskCount={tasks.length}

@@ -3,8 +3,8 @@ import ProfileAvatar from "./ProfileAvatar";
 
 /**
  * Profile panel — popover on desktop, bottom sheet on mobile.
- * Contains avatar, name editing, exports, theme toggle, sign out,
- * and account management (deactivate / delete).
+ * Contains avatar, name editing, exports, theme preference, sign out,
+ * reminders, and account management (deactivate / delete).
  */
 export default function ProfilePanel({
   open,
@@ -21,8 +21,8 @@ export default function ProfilePanel({
   onDeactivate,
   onDelete,
   onSignOut,
-  theme,
-  onToggleTheme,
+  themePreference,
+  onChangeThemePreference,
   onExportJSON,
   onExportCSV,
   taskCount,
@@ -184,16 +184,6 @@ export default function ProfilePanel({
           <button
             type="button"
             className="profile-panel__item"
-            onClick={onToggleTheme}
-          >
-            <span className="profile-panel__item-icon" aria-hidden="true">
-              {theme === "dark" ? "☀" : "☾"}
-            </span>
-            <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-          </button>
-          <button
-            type="button"
-            className="profile-panel__item"
             onClick={onSignOut}
           >
             <span className="profile-panel__item-icon" aria-hidden="true">⏻</span>
@@ -201,11 +191,31 @@ export default function ProfilePanel({
           </button>
         </div>
 
+        {/* Appearance preferences */}
+        <div className="profile-panel__section">
+          <p className="profile-panel__section-label">Appearance</p>
+          <div className="profile-panel__setting">
+            <label htmlFor="theme-preference" className="profile-panel__setting-label">
+              Theme
+            </label>
+            <select
+              id="theme-preference"
+              className="profile-panel__select"
+              value={themePreference}
+              onChange={(e) => onChangeThemePreference(e.target.value)}
+            >
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </div>
+
         {/* Reminder preferences */}
         <div className="profile-panel__section">
           <p className="profile-panel__section-label">Reminders</p>
-          <div className="profile-panel__reminder-setting">
-            <label htmlFor="reminder-offset" className="profile-panel__reminder-label">
+          <div className="profile-panel__setting">
+            <label htmlFor="reminder-offset" className="profile-panel__setting-label">
               Notify me before due date
             </label>
             <select

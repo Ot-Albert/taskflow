@@ -2,12 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../hooks/useTheme";
 import PasswordField from "../components/PasswordField";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/app";
@@ -57,14 +55,6 @@ export default function LoginPage() {
           <span className="landing__logo" aria-hidden="true">✓</span>
           <span>TaskFlow</span>
         </Link>
-        <button
-          type="button"
-          className="icon-btn theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
       </nav>
 
       <motion.div

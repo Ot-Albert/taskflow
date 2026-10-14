@@ -8,8 +8,35 @@
       name="description"
       content="TaskFlow — a simple, responsive personal task manager. Create, edit, filter, sort and export your tasks."
     />
-    <meta name="theme-color" content="#f8f3e7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#080806" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f8f3e7" />
+    <!-- Pre-paint theme script: reads taskflow.theme.v2 (matches STORAGE_KEYS.THEME in src/utils/constants.js) -->
+    <script>
+      (function () {
+        try {
+          var stored = JSON.parse(localStorage.getItem("taskflow.theme.v2"));
+          var theme = stored === "dark" || stored === "light" ? stored : null;
+          if (!theme) {
+            theme =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          }
+          document.documentElement.setAttribute("data-theme", theme);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute("content", theme === "dark" ? "#080806" : "#f8f3e7");
+          }
+        } catch (e) {
+          var fallback =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          document.documentElement.setAttribute("data-theme", fallback);
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
