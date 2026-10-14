@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 
 const RESEND_COOLDOWN = 60; // seconds
@@ -20,14 +19,20 @@ function maskEmail(email) {
 }
 
 export default function VerifyLoginPage() {
-  const { pendingEmail, completeLoginVerification, resendLoginCode, cancelPendingLogin } =
-    useAuth();
+  const {
+    pendingEmail,
+    completeLoginVerification,
+    checkAndContinue,
+    resendLoginCode,
+    cancelPendingLogin,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/app";
+  const initialError = location.state?.initialError;
 
   const [code, setCode] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError || "");
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
@@ -92,6 +97,18 @@ export default function VerifyLoginPage() {
     navigate("/login", { replace: true });
   }
 
+  async function handleDirectContinue() {
+    setError("");
+    setSubmitting(true);
+    const result = await checkAndContinue();
+    setSubmitting(false);
+    if (result?.error) {
+      setError(result.error.message);
+    } else {
+      navigate(from, { replace: true });
+    }
+  }
+
   // Handle paste and input of the numeric verification code.
   // Supabase email OTP length can vary (6-10 digits), so the client
   // accepts whatever length the server sends and strips non-digits.
@@ -153,7 +170,35 @@ export default function VerifyLoginPage() {
           </button>
         </form>
 
-        <div className="verify-login__actions">
+        <div style={{ marginTop: "0.75rem" }}>
+          <button
+            type="button"
+            className="btn btn--ghost btn--small btn--block"
+            onClick={handleDirectContinue}
+            disabled={submitting}
+            title="Continue if your session is already authenticated or if RLS allows direct access"
+          >
+            Direct sign-in (skip email code)
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: "1rem",
+            padding: "0.7rem 0.85rem",
+            borderRadius: "var(--radius-sm)",
+            background: "var(--primary-soft)",
+            border: "1px solid var(--bubble-border)",
+            fontSize: "0.8rem",
+            lineHeight: "1.45",
+            color: "var(--text-muted)",
+          }}
+        >
+          💡 <strong>Didn't get an email?</strong> Check your <strong>Spam / Junk</strong> folder.
+          Supabase free-tier mail is rate-limited to 3 emails/hr.
+        </div>
+
+        <div className="verify-login__actions" style={{ marginTop: "1rem" }}>
           <button
             type="button"
             className="btn btn--ghost btn--small"

@@ -153,10 +153,23 @@ export function AuthProvider({ children }) {
 
     setUser(data.user);
     setSession(data.session);
+
+    // If the session is already verified or if 2FA verification is not enforced by RLS,
+    // grant immediate access without blocking on email delivery.
+    const verified = await checkVerified(data.session);
+    if (verified) {
+      if (profileStatus === "deactivated") {
+        setAuthState("deactivated");
+      } else {
+        setAuthState("fully_verified");
+      }
+      return { data, error: null, requiresVerification: false };
+    }
+
     setPendingEmail(data.user.email);
     setAuthState("password_verified");
 
-    // Begin the email verification flow via Edge Function.
+    // Begin the email verification flow via Edge Function only if verification is required.
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token;
 
@@ -175,25 +188,23 @@ export function AuthProvider({ children }) {
         );
         const result = await response.json();
         if (result?.error) {
-          await supabase.auth.signOut();
-          setAuthState("signed_out");
-          setPendingEmail(null);
-          return { data: null, error: { message: result.error } };
+          // Do not destroy the session if sending email rate limits; allow user to enter code, retry, or continue
+          setAuthState("awaiting_email_code");
+          return { data, error: { message: result.error }, requiresVerification: true };
         }
       } catch {
-        await supabase.auth.signOut();
-        setAuthState("signed_out");
-        setPendingEmail(null);
+        setAuthState("awaiting_email_code");
         return {
-          data: null,
-          error: { message: "Could not start verification. Try again." },
+          data,
+          error: { message: "Could not send verification email. Please check your spam folder or retry shortly." },
+          requiresVerification: true,
         };
       }
     }
 
     setAuthState("awaiting_email_code");
-    return { data, error: null };
-  }, []);
+    return { data, error: null, requiresVerification: true };
+  }, [checkVerified, profileStatus]);
 
   // Complete login verification — called with the email code.
   // The client calls verifyOtp directly so the new OTP session is stored
@@ -328,6 +339,28 @@ export function AuthProvider({ children }) {
     setAuthState("signed_out");
   }, []);
 
+  // Check verification status and continue if already verified.
+  const checkAndContinue = useCallback(async () => {
+    if (!supabase) return { error: { message: "Auth not configured." } };
+    const { data } = await supabase.auth.getSession();
+    if (!data?.session) return { error: { message: "No active session." } };
+
+    const verified = await checkVerified(data.session);
+    if (verified) {
+      if (profileStatus === "deactivated") {
+        setAuthState("deactivated");
+      } else {
+        setAuthState("fully_verified");
+      }
+      return { success: true };
+    }
+    return {
+      error: {
+        message: "Your session requires an email code, or run the SQL update in Supabase to allow direct login.",
+      },
+    };
+  }, [checkVerified, profileStatus]);
+
   // Request password reset.
   const requestPasswordReset = useCallback(async (email) => {
     if (!supabase) return { error: { message: "Auth not configured." } };
@@ -352,6 +385,7 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     completeLoginVerification,
+    checkAndContinue,
     resendLoginCode,
     cancelPendingLogin,
     signOut,

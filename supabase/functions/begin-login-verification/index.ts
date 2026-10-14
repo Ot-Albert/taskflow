@@ -118,7 +118,10 @@ Deno.serve(async (req) => {
     });
 
     if (otpErr) {
-      return json({ error: "Could not send verification email." }, 500);
+      return json(
+        { error: otpErr.message || "Could not send verification email." },
+        otpErr.status || 500
+      );
     }
 
     return json({ success: true, email: userEmail }, 200);
