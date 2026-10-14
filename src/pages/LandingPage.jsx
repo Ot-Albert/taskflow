@@ -32,6 +32,11 @@ const features = [
     desc: "Reorder tasks with drag-and-drop or keyboard arrows. Your order persists automatically.",
   },
   {
+    icon: "🔔",
+    title: "Task reminders",
+    desc: "Stay on top of deadlines with timely in-app notifications and customizable reminder schedules.",
+  },
+  {
     icon: "☾",
     title: "Dark & light modes",
     desc: "A refined gold-and-black theme in both modes. Follows your system preference by default.",
@@ -109,7 +114,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="preview-card">
+          <div className="preview-card bubble-card">
             <div className="preview-card__header">
               <span className="badge badge--status">To Do</span>
               <span className="badge badge--priority badge--high">High</span>
@@ -119,7 +124,7 @@ export default function LandingPage() {
             <span className="preview-card__due">Due Aug 28, 2026</span>
           </div>
           <motion.div
-            className="preview-card preview-card--offset"
+            className="preview-card preview-card--offset bubble-card"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
@@ -154,7 +159,7 @@ export default function LandingPage() {
           viewport={{ once: true, margin: "-60px" }}
         >
           {features.map((f) => (
-            <motion.div key={f.title} variants={item} className="feature-card">
+            <motion.div key={f.title} variants={item} className="feature-card bubble-card">
               <span className="feature-card__icon" aria-hidden="true">
                 {f.icon}
               </span>

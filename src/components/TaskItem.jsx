@@ -23,7 +23,8 @@ export default function TaskItem({
 
   return (
     <li
-      className={`task ${isDragging ? "task--dragging" : ""}`}
+      id={`task-${task.id}`}
+      className={`task bubble-card ${isDragging ? "task--dragging" : ""}`}
       draggable
       onDragStart={() => onDragStart(task.id)}
       onDragEnter={(e) => onDragEnter(e, task.id)}

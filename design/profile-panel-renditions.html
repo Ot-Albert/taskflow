@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TaskFlow — Profile Panel Renditions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============ Tokens copied verbatim from src/index.css ============ */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-card: 24px;
+  --transition: 160ms ease;
+}
+:root, :root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8f3e7; --surface: #fffdf7; --surface-2: #f2e8cc;
+  --border: #dcc98c; --border-strong: #c9a227;
+  --text: #17140c; --text-muted: #6d6246; --placeholder: #9a8c63;
+  --primary: #c9a227; --primary-hover: #ad8616; --primary-soft: #f3e7b8; --on-primary: #0d0c08;
+  --danger: #c63f45; --danger-hover: #a82f34; --danger-soft: rgba(198,63,69,.12);
+  --success: #287a49; --success-soft: rgba(40,122,73,.14);
+  --warning: #b07d12; --warning-soft: rgba(176,125,18,.16);
+  --focus-ring: rgba(201,162,39,.55); --overlay: rgba(20,16,6,.55);
+  --shadow: 0 1px 3px rgba(60,45,10,.08), 0 4px 16px rgba(60,45,10,.06);
+  --shadow-lg: 0 10px 40px rgba(60,45,10,.18);
+  /* rendition-only extras */
+  --hairline: rgba(23,20,12,.08);
+  --hairline-2: rgba(23,20,12,.14);
+  --gold-grad: linear-gradient(135deg,#e6c75a 0%,#c9a227 45%,#a57f12 100%);
+  --glow: 0 0 0 1px rgba(201,162,39,.25), 0 8px 24px -8px rgba(201,162,39,.45);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #080806; --surface: #12110e; --surface-2: #1d1a12;
+  --border: #493d1d; --border-strong: #6a5728;
+  --text: #f8efcf; --text-muted: #b9aa7e; --placeholder: #7a6e4c;
+  --primary: #d4af37; --primary-hover: #e1bf4b; --primary-soft: #2d2511; --on-primary: #090806;
+  --danger: #ff7075; --danger-hover: #ff8d91; --danger-soft: rgba(255,112,117,.14);
+  --success: #67d58b; --success-soft: rgba(103,213,139,.14);
+  --warning: #e0b04b; --warning-soft: rgba(224,176,75,.16);
+  --focus-ring: rgba(212,175,55,.6); --overlay: rgba(0,0,0,.7);
+  --shadow: 0 1px 3px rgba(0,0,0,.45), 0 4px 16px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,.6);
+  --hairline: rgba(248,239,207,.08);
+  --hairline-2: rgba(248,239,207,.14);
+  --gold-grad: linear-gradient(135deg,#f0d26a 0%,#d4af37 45%,#9c7a14 100%);
+  --glow: 0 0 0 1px rgba(212,175,55,.3), 0 8px 28px -8px rgba(212,175,55,.5);
+}
+
+/* ============ Page chrome ============ */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-sans); background: var(--bg); color: var(--text);
+  line-height: 1.5; -webkit-font-smoothing: antialiased;
+  transition: background var(--transition), color var(--transition);
+}
+button { font-family: inherit; }
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .85rem 1.5rem; background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--hairline);
+}
+.topbar h1 { font-size: .95rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+.topbar h1 span { color: var(--text-muted); font-weight: 500; }
+.seg {
+  display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--hairline);
+}
+.seg button {
+  border: 0; background: transparent; color: var(--text-muted); cursor: pointer;
+  padding: .35rem .8rem; border-radius: 999px; font-size: .8rem; font-weight: 500;
+  transition: all var(--transition);
+}
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.intro { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem 0; }
+.intro p { color: var(--text-muted); margin: .25rem 0 0; font-size: .92rem; max-width: 70ch; }
+.grid {
+  max-width: 1400px; margin: 0 auto; padding: 1.5rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;
+  align-items: start;
+}
+.cell { display: flex; flex-direction: column; gap: 1rem; }
+.cell__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.cell__head h2 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.cell__head h2 small { display: block; font-size: .78rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0; margin-top: .15rem; }
+.tag { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--primary); white-space: nowrap; }
+.notes { font-size: .82rem; color: var(--text-muted); margin: 0; padding-left: 1.1rem; }
+.notes li + li { margin-top: .2rem; }
+.stage {
+  position: relative; display: grid; place-items: start center;
+  padding: 1.5rem 1rem; border-radius: 20px;
+  background:
+    radial-gradient(1200px 300px at 50% -10%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 60%),
+    var(--surface-2);
+  border: 1px solid var(--hairline);
+  min-height: 560px;
+}
+.stage--wide { grid-column: 1 / -1; }
+@media (min-width: 1100px) { .stage--wide { grid-column: auto; } }
+
+/* ============ Shared primitives ============ */
+.ico { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.ico--sm { width: 15px; height: 15px; }
+.ico--xs { width: 13px; height: 13px; }
+.muted { color: var(--text-muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* avatar base */
+.av { position: relative; display: grid; place-items: center; border-radius: 50%; font-weight: 600; letter-spacing: .02em; color: var(--on-primary); }
+.av--l { width: 72px; height: 72px; font-size: 1.35rem; }
+.av--xl { width: 84px; height: 84px; font-size: 1.6rem; }
+.av--m { width: 56px; height: 56px; font-size: 1.1rem; }
+.av__cam {
+  position: absolute; right: -2px; bottom: -2px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); color: var(--text);
+  border: 1px solid var(--hairline-2); box-shadow: var(--shadow); cursor: pointer;
+}
+.av__cam .ico { width: 13px; height: 13px; }
+
+/* =====================================================================
+   RENDITION A — "Quiet Luxury"  (popover, 340px)
+   ===================================================================== */
+.rA {
+  width: 340px; max-width: 100%; background: var(--surface); border-radius: var(--radius-card);
+  border: 1px solid var(--hairline-2); box-shadow: var(--shadow-lg); overflow: hidden;
+}
+.rA__head { padding: 1.75rem 1.5rem 1.25rem; text-align: center; position: relative; }
+.rA__head::after { content: ""; position: absolute; left: 1.5rem; right: 1.5rem; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); opacity: .6; }
+.rA .av { margin: 0 auto .9rem; background: var(--gold-grad); box-shadow: var(--glow); }
+.rA .av::before { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+.rA__name { display: inline-flex; align-items: center; gap: .4rem; font-size: 1.15rem; font-weight: 600; letter-spacing: -.015em; margin: 0; }
+.rA__name .ico { width: 13px; height: 13px; color: var(--text-muted); }
+.rA__email { margin: .15rem 0 0; font-size: .82rem; color: var(--text-muted); }
+.rA__meta { display: inline-flex; align-items: center; gap: .4rem; margin-top: .65rem; padding: .25rem .7rem; border-radius: 999px; background: var(--primary-soft); font-size: .72rem; font-weight: 600; color: var(--text); letter-spacing: .01em; }
+.rA__meta i { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); display: inline-block; }
+.rA__group { padding: .75rem 1rem; }
+.rA__group + .rA__group { border-top: 1px solid var(--hairline); }
+.rA__label { margin: .25rem 0 .5rem .5rem; font-size: .66rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); }
+.rA__row {
+  display: flex; align-items: center; gap: .85rem; width: 100%; padding: .65rem .6rem;
+  background: none; border: 0; border-radius: 12px; cursor: pointer; color: var(--text);
+  font-size: .9rem; text-align: left; transition: background var(--transition);
+}
+.rA__row:hover { background: color-mix(in srgb, var(--primary-soft) 70%, transparent); }
+.rA__row .ico { color: var(--text-muted); }
+.rA__row b { font-weight: 500; flex: 1; }
+.rA__row .chev { color: var(--placeholder); width: 15px; height: 15px; }
+.rA__row .val { font-size: .82rem; color: var(--text-muted); }
+.rA__row--danger { color: var(--danger); }
+.rA__row--danger .ico { color: var(--danger); }
+.rA__row--danger:hover { background: var(--danger-soft); }
+.rA__segwrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .45rem .6rem; }
+.rA__segwrap span { font-size: .9rem; font-weight: 500; }
+.rA .seg { padding: 2px; }
+.rA .seg button { padding: .3rem .55rem; font-size: .74rem; }
+.rA__foot { padding: .75rem 1rem 1rem; border-top: 1px solid var(--hairline); }
+
+/* =====================================================================
+   RENDITION B — "Gold Standard"  (popover, 360px, header band + stats)
+   ===================================================================== */
+.rB {
+  width: 360px; max-width: 100%; background: var(--surface); border-radius: 22px;
+  border: 1px solid var(--hairline-2); box-shadow: var(--shadow-lg); overflow: hidden;
+}
+.rB__band {
+  position: relative; padding: 1.5rem 1.25rem 0; height: 96px;
+  background:
+    radial-gradient(400px 160px at 20% 0%, color-mix(in srgb, var(--primary) 35%, transparent), transparent 70%),
+    radial-gradient(300px 140px at 90% 10%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 70%),
+    var(--surface-2);
+  border-bottom: 1px solid var(--hairline);
+}
+.rB__band::before {
+  content: ""; position: absolute; inset: 0; opacity: .5;
+  background-image: repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--primary) 7%, transparent) 10px 11px);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.9), transparent);
+}
+.rB__close { position: absolute; top: .85rem; right: .85rem; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hairline-2); background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--text-muted); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(6px); }
+.rB__close .ico { width: 14px; height: 14px; }
+.rB__id { display: flex; align-items: flex-end; gap: 1rem; padding: 0 1.25rem; margin-top: -36px; position: relative; }
+.rB .av { background: var(--gold-grad); border: 3px solid var(--surface); box-shadow: var(--shadow); }
+.rB__who { padding-bottom: .15rem; min-width: 0; }
+.rB__name { display: flex; align-items: center; gap: .4rem; margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: -.015em; }
+.rB__name .ico { width: 13px; height: 13px; color: var(--text-muted); }
+.rB__email { margin: 0; font-size: .8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rB__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; padding: 1rem 1.25rem .25rem; }
+.rB__stat { padding: .6rem .7rem; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--hairline); }
+.rB__stat b { display: block; font-size: 1.15rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.rB__stat span { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.rB__stat--hi { background: var(--primary-soft); border-color: color-mix(in srgb, var(--primary) 35%, transparent); }
+.rB__group { padding: .9rem 1.25rem .25rem; }
+.rB__label { display: flex; align-items: center; justify-content: space-between; margin: 0 0 .5rem; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted); }
+.rB__card { border: 1px solid var(--hairline-2); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.rB__row { display: flex; align-items: center; gap: .8rem; width: 100%; padding: .7rem .85rem; background: none; border: 0; cursor: pointer; color: var(--text); font-size: .88rem; text-align: left; transition: background var(--transition); }
+.rB__row + .rB__row { border-top: 1px solid var(--hairline); }
+.rB__row:hover { background: color-mix(in srgb, var(--primary-soft) 60%, transparent); }
+.rB__row .ico { color: var(--primary); }
+.rB__row b { font-weight: 500; flex: 1; }
+.rB__row .chev { color: var(--placeholder); width: 15px; height: 15px; }
+.rB__row .val { font-size: .8rem; color: var(--text-muted); }
+.rB__row--danger .ico, .rB__row--danger b { color: var(--danger); }
+.rB__row--danger:hover { background: var(--danger-soft); }
+.rB__seg { display: flex; gap: .4rem; padding: .7rem .85rem; }
+.rB__seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; padding: .5rem; border-radius: 10px; border: 1px solid var(--hairline-2); background: var(--surface); color: var(--text-muted); font-size: .78rem; font-weight: 500; cursor: pointer; transition: all var(--transition); }
+.rB__seg button .ico { width: 14px; height: 14px; color: inherit; }
+.rB__seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.rB__signout { display: flex; align-items: center; justify-content: center; gap: .5rem; margin: 1rem 1.25rem 1.25rem; padding: .7rem; border-radius: 12px; border: 1px solid var(--hairline-2); background: var(--surface); color: var(--text); font-weight: 500; font-size: .88rem; cursor: pointer; }
+.rB__signout:hover { background: var(--surface-2); }
+
+/* =====================================================================
+   RENDITION C — "Inset Grouped"  (iOS-settings style, bottom-sheet/popover 340px)
+   ===================================================================== */
+.rC {
+  width: 340px; max-width: 100%; border-radius: 28px; overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 92%, var(--surface)); border: 1px solid var(--hairline-2); box-shadow: var(--shadow-lg);
+}
+.rC__grab { width: 36px; height: 4px; border-radius: 2px; background: var(--hairline-2); margin: .6rem auto 0; }
+.rC__id { display: flex; align-items: center; gap: .9rem; padding: 1.1rem 1.25rem 1rem; }
+.rC .av { background: var(--gold-grad); }
+.rC__name { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.rC__email { margin: 0; font-size: .8rem; color: var(--text-muted); }
+.rC__pill { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; font-size: .7rem; font-weight: 600; color: var(--primary-hover); }
+:root[data-theme="dark"] .rC__pill { color: var(--primary); }
+.rC__pill .ico { width: 11px; height: 11px; }
+.rC__edit { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--hairline-2); background: var(--surface); color: var(--text-muted); display: grid; place-items: center; cursor: pointer; }
+.rC__edit .ico { width: 14px; height: 14px; }
+.rC__list { margin: 0 .9rem .7rem; border-radius: 16px; background: var(--surface); border: 1px solid var(--hairline); overflow: hidden; }
+.rC__cap { margin: 0 1.6rem .35rem; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+.rC__row { display: flex; align-items: center; gap: .75rem; width: 100%; padding: .62rem .8rem .62rem .75rem; min-height: 46px; background: none; border: 0; cursor: pointer; color: var(--text); font-size: .9rem; text-align: left; }
+.rC__row + .rC__row { position: relative; }
+.rC__row + .rC__row::before { content: ""; position: absolute; left: 3.1rem; right: 0; top: 0; height: 1px; background: var(--hairline); }
+.rC__row:hover { background: color-mix(in srgb, var(--primary-soft) 55%, transparent); }
+.rC__tile { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; color: var(--on-primary); }
+.rC__tile .ico { width: 15px; height: 15px; stroke-width: 2; }
+.rC__tile--gold { background: var(--gold-grad); }
+.rC__tile--ink { background: var(--text); color: var(--bg); }
+.rC__tile--muted { background: var(--surface-2); color: var(--text); border: 1px solid var(--hairline); }
+.rC__tile--red { background: var(--danger); color: #fff; }
+.rC__row b { font-weight: 500; flex: 1; }
+.rC__row .val { font-size: .84rem; color: var(--text-muted); }
+.rC__row .chev { color: var(--placeholder); width: 15px; height: 15px; }
+.rC__row--danger b { color: var(--danger); }
+.rC__row--danger:hover { background: var(--danger-soft); }
+.rC__switch { width: 40px; height: 24px; border-radius: 12px; background: var(--hairline-2); position: relative; flex-shrink: 0; transition: background var(--transition); }
+.rC__switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform var(--transition); }
+.rC__switch[aria-checked="true"] { background: var(--primary); }
+.rC__switch[aria-checked="true"]::after { transform: translateX(16px); }
+.rC__foot { text-align: center; font-size: .7rem; color: var(--placeholder); padding: .25rem 0 1rem; }
+
+/* =====================================================================
+   RENDITION D — "Executive Suite"  (centered modal, 620px, two columns)
+   ===================================================================== */
+.rD {
+  width: 620px; max-width: 100%; background: var(--surface); border-radius: 24px;
+  border: 1px solid var(--hairline-2); box-shadow: var(--shadow-lg); overflow: hidden;
+  display: grid; grid-template-columns: 220px 1fr;
+}
+.rD__side {
+  padding: 1.75rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;
+  background:
+    radial-gradient(260px 200px at 50% 0%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%),
+    var(--surface-2);
+  border-right: 1px solid var(--hairline);
+}
+.rD__idc { text-align: center; }
+.rD .av { margin: 0 auto .8rem; background: var(--gold-grad); box-shadow: var(--glow); }
+.rD__name { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: -.015em; display: inline-flex; align-items: center; gap: .35rem; }
+.rD__name .ico { width: 12px; height: 12px; color: var(--text-muted); }
+.rD__email { margin: .1rem 0 0; font-size: .76rem; color: var(--text-muted); word-break: break-all; }
+.rD__since { margin: .6rem 0 0; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 600; }
+.rD__nav { display: flex; flex-direction: column; gap: 2px; }
+.rD__nav button { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; border-radius: 10px; border: 0; background: none; color: var(--text-muted); font-size: .84rem; font-weight: 500; cursor: pointer; text-align: left; }
+.rD__nav button .ico { width: 15px; height: 15px; }
+.rD__nav button[aria-current="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.rD__nav button:hover:not([aria-current="true"]) { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.rD__signout { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: .5rem; padding: .6rem; border-radius: 10px; border: 1px solid var(--hairline-2); background: transparent; color: var(--text); font-size: .82rem; font-weight: 500; cursor: pointer; }
+.rD__main { padding: 1.5rem 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.rD__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.rD__top h3 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.015em; }
+.rD__top p { margin: .15rem 0 0; font-size: .82rem; color: var(--text-muted); }
+.rD__close { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--hairline-2); background: var(--surface); color: var(--text-muted); display: grid; place-items: center; cursor: pointer; }
+.rD__close .ico { width: 14px; height: 14px; }
+.rD__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; }
+.rD__stat { padding: .7rem .75rem; border-radius: 14px; border: 1px solid var(--hairline-2); background: var(--surface); }
+.rD__stat b { display: block; font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.rD__stat span { font-size: .66rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.rD__stat em { display: inline-block; margin-left: .3rem; font-style: normal; font-size: .66rem; color: var(--success); font-weight: 600; }
+.rD__sec h4 { margin: 0 0 .5rem; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted); }
+.rD__card { border: 1px solid var(--hairline-2); border-radius: 14px; overflow: hidden; }
+.rD__pref { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem .9rem; }
+.rD__pref + .rD__pref { border-top: 1px solid var(--hairline); }
+.rD__pref b { display: block; font-size: .88rem; font-weight: 500; }
+.rD__pref small { display: block; font-size: .76rem; color: var(--text-muted); margin-top: .05rem; }
+.rD__select { appearance: none; -webkit-appearance: none; padding: .45rem 2rem .45rem .75rem; border-radius: 9px; border: 1px solid var(--hairline-2); background: var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239a8c63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right .6rem center; color: var(--text); font-size: .82rem; font-weight: 500; cursor: pointer; }
+.rD .seg { padding: 2px; }
+.rD .seg button { padding: .3rem .6rem; font-size: .74rem; }
+.rD__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.rD__tile { display: flex; align-items: center; gap: .7rem; padding: .7rem .8rem; border-radius: 12px; border: 1px solid var(--hairline-2); background: var(--surface); color: var(--text); cursor: pointer; font-size: .85rem; font-weight: 500; text-align: left; }
+.rD__tile .ico { color: var(--primary); }
+.rD__tile:hover { background: var(--surface-2); }
+.rD__danger { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem .9rem; border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger-soft) 60%, transparent); }
+.rD__danger b { display: block; font-size: .85rem; font-weight: 600; color: var(--danger); }
+.rD__danger small { display: block; font-size: .74rem; color: var(--text-muted); }
+.rD__danger .acts { display: flex; gap: .4rem; flex-shrink: 0; }
+.rD__danger button { padding: .4rem .7rem; border-radius: 8px; font-size: .76rem; font-weight: 600; cursor: pointer; border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); background: var(--surface); color: var(--danger); }
+.rD__danger button.solid { background: var(--danger); color: #fff; border-color: var(--danger); }
+@media (max-width: 680px) { .rD { grid-template-columns: 1fr; } .rD__side { border-right: 0; border-bottom: 1px solid var(--hairline); } .rD__stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>TaskFlow <span>/ Profile panel — 4 revamp renditions</span></h1>
+  <div class="seg" role="group" aria-label="Preview theme">
+    <button type="button" data-theme-btn="light" aria-pressed="true">Light</button>
+    <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+  </div>
+</header>
+
+<section class="intro">
+  <p>All four use the app's existing gold/ivory and charcoal tokens, SF Pro / Inter, and lucide icons. Toggle the theme above to compare. Renditions A, B and C keep the popover / bottom-sheet footprint; D explores a wider centered modal. Hover rows to see interaction states.</p>
+</section>
+
+<main class="grid">
+
+  <!-- ================= A ================= -->
+  <div class="cell">
+    <div class="cell__head">
+      <h2>A · Quiet Luxury <small>Popover · 340px · styling + light restructure</small></h2>
+      <span class="tag">Closest to current</span>
+    </div>
+    <div class="stage">
+      <div class="rA" role="dialog" aria-label="Profile and settings">
+        <div class="rA__head">
+          <div class="av av--l">AL<button class="av__cam" aria-label="Change photo"><svg class="ico"><use href="#i-camera"/></svg></button></div>
+          <h3 class="rA__name">Albert <svg class="ico"><use href="#i-pencil"/></svg></h3>
+          <p class="rA__email">olusanyataire@gmail.com</p>
+          <span class="rA__meta"><i></i>2 tasks tracked · 1 due this week</span>
+        </div>
+
+        <div class="rA__group">
+          <p class="rA__label">Data</p>
+          <button class="rA__row"><svg class="ico"><use href="#i-braces"/></svg><b>Export as JSON</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rA__row"><svg class="ico"><use href="#i-table"/></svg><b>Export as CSV</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+        </div>
+
+        <div class="rA__group">
+          <p class="rA__label">Preferences</p>
+          <div class="rA__segwrap">
+            <span>Theme</span>
+            <div class="seg"><button aria-pressed="true">System</button><button>Light</button><button>Dark</button></div>
+          </div>
+          <button class="rA__row"><svg class="ico"><use href="#i-bell"/></svg><b>Remind me</b><span class="val">3 days before</span><svg class="ico chev"><use href="#i-chev"/></svg></button>
+        </div>
+
+        <div class="rA__group">
+          <p class="rA__label">Account</p>
+          <button class="rA__row"><svg class="ico"><use href="#i-pause"/></svg><b>Deactivate account</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rA__row rA__row--danger"><svg class="ico"><use href="#i-trash"/></svg><b>Delete account</b></button>
+        </div>
+
+        <div class="rA__foot">
+          <button class="rA__row"><svg class="ico"><use href="#i-logout"/></svg><b>Sign out</b></button>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Same footprint and sections; gets its lift from hairline dividers, a gold gradient avatar with a halo ring, and tighter type.</li>
+      <li>Theme becomes a 3-way segmented control; reminders become a row that opens a picker instead of an inline native select.</li>
+      <li>Deactivate is de-emphasised to neutral; only Delete stays red. Sign out moves to the footer.</li>
+    </ul>
+  </div>
+
+  <!-- ================= B ================= -->
+  <div class="cell">
+    <div class="cell__head">
+      <h2>B · Gold Standard <small>Popover · 360px · header band + stat chips</small></h2>
+      <span class="tag">Most "brand"</span>
+    </div>
+    <div class="stage">
+      <div class="rB" role="dialog" aria-label="Profile and settings">
+        <div class="rB__band"><button class="rB__close" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button></div>
+        <div class="rB__id">
+          <div class="av av--l">AL<button class="av__cam" aria-label="Change photo"><svg class="ico"><use href="#i-camera"/></svg></button></div>
+          <div class="rB__who">
+            <h3 class="rB__name">Albert <svg class="ico"><use href="#i-pencil"/></svg></h3>
+            <p class="rB__email">olusanyataire@gmail.com</p>
+          </div>
+        </div>
+
+        <div class="rB__stats">
+          <div class="rB__stat rB__stat--hi"><b>2</b><span>Open</span></div>
+          <div class="rB__stat"><b>14</b><span>Done</span></div>
+          <div class="rB__stat"><b>5<small style="font-size:.7rem;font-weight:500;color:var(--text-muted)">d</small></b><span>Streak</span></div>
+        </div>
+
+        <div class="rB__group">
+          <p class="rB__label"><span>Appearance</span></p>
+          <div class="rB__card">
+            <div class="rB__seg">
+              <button aria-pressed="true"><svg class="ico"><use href="#i-monitor"/></svg>System</button>
+              <button><svg class="ico"><use href="#i-sun"/></svg>Light</button>
+              <button><svg class="ico"><use href="#i-moon"/></svg>Dark</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rB__group">
+          <p class="rB__label"><span>Reminders &amp; data</span></p>
+          <div class="rB__card">
+            <button class="rB__row"><svg class="ico"><use href="#i-bell"/></svg><b>Notify before due date</b><span class="val">3 days</span><svg class="ico chev"><use href="#i-chev"/></svg></button>
+            <button class="rB__row"><svg class="ico"><use href="#i-download"/></svg><b>Export tasks</b><span class="val">JSON · CSV</span><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          </div>
+        </div>
+
+        <div class="rB__group">
+          <p class="rB__label"><span>Account</span></p>
+          <div class="rB__card">
+            <button class="rB__row"><svg class="ico" style="color:var(--text-muted)"><use href="#i-pause"/></svg><b>Deactivate account</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+            <button class="rB__row rB__row--danger"><svg class="ico"><use href="#i-trash"/></svg><b>Delete account</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          </div>
+        </div>
+
+        <button class="rB__signout"><svg class="ico ico--sm"><use href="#i-logout"/></svg>Sign out</button>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A textured gold header band with the avatar overlapping it; carded groups with gold icons and chevrons.</li>
+      <li>Adds three stat chips (Open / Done / Streak). "Done" and "Streak" need small data additions later; "Open" exists today.</li>
+      <li>Exports collapse into one "Export tasks" row that opens a two-option sheet, reducing list length.</li>
+    </ul>
+  </div>
+
+  <!-- ================= C ================= -->
+  <div class="cell">
+    <div class="cell__head">
+      <h2>C · Inset Grouped <small>Bottom sheet / popover · 340px · iOS Settings idiom</small></h2>
+      <span class="tag">Best on mobile</span>
+    </div>
+    <div class="stage">
+      <div class="rC" role="dialog" aria-label="Profile and settings">
+        <div class="rC__grab"></div>
+        <div class="rC__id">
+          <div class="av av--m">AL</div>
+          <div>
+            <h3 class="rC__name">Albert</h3>
+            <p class="rC__email">olusanyataire@gmail.com</p>
+            <span class="rC__pill"><svg class="ico"><use href="#i-sparkle"/></svg>Member since Aug 2026</span>
+          </div>
+          <button class="rC__edit" aria-label="Edit profile"><svg class="ico"><use href="#i-pencil"/></svg></button>
+        </div>
+
+        <p class="rC__cap">Preferences</p>
+        <div class="rC__list">
+          <button class="rC__row"><span class="rC__tile rC__tile--ink"><svg class="ico"><use href="#i-moon"/></svg></span><b>Appearance</b><span class="val">System</span><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rC__row"><span class="rC__tile rC__tile--gold"><svg class="ico"><use href="#i-bell"/></svg></span><b>Reminders</b><span class="val">3 days before</span><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rC__row" role="switch" aria-checked="true"><span class="rC__tile rC__tile--muted"><svg class="ico"><use href="#i-inbox"/></svg></span><b>In-app notifications</b><span class="rC__switch" aria-checked="true"></span></button>
+        </div>
+
+        <p class="rC__cap">Your data</p>
+        <div class="rC__list">
+          <button class="rC__row"><span class="rC__tile rC__tile--muted"><svg class="ico"><use href="#i-braces"/></svg></span><b>Export JSON</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rC__row"><span class="rC__tile rC__tile--muted"><svg class="ico"><use href="#i-table"/></svg></span><b>Export CSV</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+        </div>
+
+        <p class="rC__cap">Account</p>
+        <div class="rC__list">
+          <button class="rC__row"><span class="rC__tile rC__tile--muted"><svg class="ico"><use href="#i-logout"/></svg></span><b>Sign out</b></button>
+          <button class="rC__row"><span class="rC__tile rC__tile--muted"><svg class="ico"><use href="#i-pause"/></svg></span><b>Deactivate account</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+          <button class="rC__row rC__row--danger"><span class="rC__tile rC__tile--red"><svg class="ico"><use href="#i-trash"/></svg></span><b>Delete account</b><svg class="ico chev"><use href="#i-chev"/></svg></button>
+        </div>
+        <p class="rC__foot">TaskFlow v1 · 2 tasks tracked</p>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Inset grouped lists on a slightly recessed background, colored icon tiles, inset separators and a grab handle — reads as a native sheet.</li>
+      <li>Appearance and Reminders become drill-in rows showing their current value; a switch is shown for in-app notifications (new).</li>
+      <li>Adds "Member since" (available from the auth user's <code>created_at</code>, no schema change).</li>
+    </ul>
+  </div>
+
+  <!-- ================= D ================= -->
+  <div class="cell">
+    <div class="cell__head">
+      <h2>D · Executive Suite <small>Centered modal · 620px · two columns with sidebar nav</small></h2>
+      <span class="tag">Largest change</span>
+    </div>
+    <div class="stage stage--wide">
+      <div class="rD" role="dialog" aria-label="Account settings">
+        <aside class="rD__side">
+          <div class="rD__idc">
+            <div class="av av--xl">AL<button class="av__cam" aria-label="Change photo"><svg class="ico"><use href="#i-camera"/></svg></button></div>
+            <h3 class="rD__name">Albert <svg class="ico"><use href="#i-pencil"/></svg></h3>
+            <p class="rD__email">olusanyataire@gmail.com</p>
+            <p class="rD__since">Member since Aug 2026</p>
+          </div>
+          <nav class="rD__nav">
+            <button aria-current="true"><svg class="ico"><use href="#i-user"/></svg>Overview</button>
+            <button><svg class="ico"><use href="#i-sliders"/></svg>Preferences</button>
+            <button><svg class="ico"><use href="#i-download"/></svg>Data &amp; export</button>
+            <button><svg class="ico"><use href="#i-shield"/></svg>Account</button>
+          </nav>
+          <button class="rD__signout"><svg class="ico ico--sm"><use href="#i-logout"/></svg>Sign out</button>
+        </aside>
+
+        <section class="rD__main">
+          <div class="rD__top">
+            <div><h3>Overview</h3><p>Your activity and the settings you use most.</p></div>
+            <button class="rD__close" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button>
+          </div>
+
+          <div class="rD__stats">
+            <div class="rD__stat"><b>2</b><span>Open</span></div>
+            <div class="rD__stat"><b>14</b><span>Completed</span></div>
+            <div class="rD__stat"><b>0</b><span>Overdue</span></div>
+            <div class="rD__stat"><b>5d<em>↑</em></b><span>Streak</span></div>
+          </div>
+
+          <div class="rD__sec">
+            <h4>Preferences</h4>
+            <div class="rD__card">
+              <div class="rD__pref"><div><b>Theme</b><small>Follow your device or pick one.</small></div><div class="seg"><button aria-pressed="true">System</button><button>Light</button><button>Dark</button></div></div>
+              <div class="rD__pref"><div><b>Reminder lead time</b><small>When to notify you before a due date.</small></div><select class="rD__select"><option>1 hour before</option><option>1 day before</option><option selected>3 days before</option><option>1 week before</option></select></div>
+            </div>
+          </div>
+
+          <div class="rD__sec">
+            <h4>Data</h4>
+            <div class="rD__row2">
+              <button class="rD__tile"><svg class="ico"><use href="#i-braces"/></svg>Export JSON</button>
+              <button class="rD__tile"><svg class="ico"><use href="#i-table"/></svg>Export CSV</button>
+            </div>
+          </div>
+
+          <div class="rD__danger">
+            <div><b>Danger zone</b><small>Deactivate to pause, or delete permanently.</small></div>
+            <div class="acts"><button>Deactivate</button><button class="solid">Delete</button></div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>A proper settings dialog: identity + navigation on the left, content on the right. Room for descriptions under each preference and a four-stat overview.</li>
+      <li>Collapses to a single column under 680px (sidebar stacks on top); on phones it would still present as a full-height sheet.</li>
+      <li>Biggest refactor: ProfilePanel becomes a tabbed modal; Overdue / Completed / Streak need data additions.</li>
+    </ul>
+  </div>
+
+</main>
+
+<!-- lucide icon paths (MIT) inlined so the page works offline -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+</svg>
+
+<script>
+  const root = document.documentElement;
+  const btns = document.querySelectorAll("[data-theme-btn]");
+  function setTheme(t) {
+    root.setAttribute("data-theme", t);
+    btns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeBtn === t)));
+  }
+  btns.forEach(b => b.addEventListener("click", () => setTheme(b.dataset.themeBtn)));
+  setTheme(matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  // Make segmented controls inside renditions clickable for feel.
+  document.querySelectorAll(".rA .seg, .rD .seg, .rB__seg").forEach(group => {
+    group.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      group.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+    }));
+  });
+  document.querySelectorAll(".rC__switch").forEach(s => s.parentElement.addEventListener("click", () => {
+    const on = s.getAttribute("aria-checked") !== "true";
+    s.setAttribute("aria-checked", String(on)); s.parentElement.setAttribute("aria-checked", String(on));
+  }));
+</script>
+</body>
+</html>

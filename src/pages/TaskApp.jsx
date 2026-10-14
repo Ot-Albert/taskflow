@@ -15,6 +15,7 @@ import { useProfile } from "../hooks/useProfile";
 import { useNotifications } from "../hooks/useNotifications";
 import { PRIORITY_RANK, SORT_OPTIONS } from "../utils/constants";
 import { exportCSV, exportJSON } from "../utils/export";
+import { isOverdue } from "../utils/date";
 import "../App.css";
 
 const DEFAULT_FILTERS = { status: "all", priority: "all" };
@@ -178,7 +179,49 @@ export default function TaskApp() {
     }
   }
 
+  const handleSelectTask = useCallback((taskId) => {
+    if (!taskId) return;
+    const element = document.getElementById(`task-${taskId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+      element.classList.add("task--highlight");
+      setTimeout(() => {
+        element.classList.remove("task--highlight");
+      }, 2000);
+    }
+  }, []);
+
   const hasCompleted = tasks.some((t) => t.status === "done");
+
+  // Stats for the profile panel's overview.
+  const profileStats = useMemo(() => {
+    const end = new Date();
+    end.setDate(end.getDate() + 7);
+    const weekEnd = [
+      end.getFullYear(),
+      String(end.getMonth() + 1).padStart(2, "0"),
+      String(end.getDate()).padStart(2, "0"),
+    ].join("-");
+    const open = tasks.filter((t) => t.status !== "done");
+    return {
+      total: tasks.length,
+      open: open.length,
+      completed: tasks.length - open.length,
+      overdue: tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
+      dueSoon: open.filter(
+        (t) => t.dueDate && t.dueDate <= weekEnd && !isOverdue(t.dueDate, t.status)
+      ).length,
+    };
+  }, [tasks]);
+
+  // "Member since" works for both Supabase (created_at) and local auth (createdAt).
+  const memberSince = useMemo(() => {
+    const raw = user?.created_at ?? user?.createdAt;
+    if (!raw) return null;
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  }, [user?.created_at, user?.createdAt]);
 
   if (loading || profile.loading) {
     return (
@@ -203,6 +246,7 @@ export default function TaskApp() {
         onMarkAsRead={notifications.markAsRead}
         onMarkAllAsRead={notifications.markAllAsRead}
         onDeleteNotification={notifications.deleteNotification}
+        onSelectTask={handleSelectTask}
       />
 
       <main className="app__main">
@@ -252,7 +296,6 @@ export default function TaskApp() {
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
         user={user}
-        profile={profile.profile}
         fullName={profile.fullName}
         initials={profile.initials}
         avatarUrl={profile.avatarUrl}
@@ -267,7 +310,8 @@ export default function TaskApp() {
         onChangeThemePreference={setPreference}
         onExportJSON={handleExportJSON}
         onExportCSV={handleExportCSV}
-        taskCount={tasks.length}
+        stats={profileStats}
+        memberSince={memberSince}
         reminderOffset={profile.reminderOffset}
         onUpdateReminderOffset={handleUpdateReminderOffset}
       />

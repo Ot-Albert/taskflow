@@ -39,9 +39,9 @@ and start adding tasks.
   length limits, invalid-date detection; submit is blocked until valid.
 - **User feedback** — toast notifications for every action, empty states for
   the list and filtered results, an "Overdue" badge on past-due tasks.
-- **Clean UI** — custom CSS with design tokens (CSS variables), a
-  gold-and-black light/dark theme, and iPhone-style squircle corners on
-  cards and controls. No UI library.
+- **Clean UI & bubble cards** — custom CSS with design tokens (CSS variables), a
+  gold-and-black light/dark theme, and signature 24px bubble cards with dual-layer
+  halo shadows across landing, auth, and in-app views. No UI library.
 
 ### Nice-to-haves (included)
 
@@ -52,6 +52,9 @@ and start adding tasks.
 - **Drag-and-drop reordering** — native HTML5 DnD plus up/down arrow buttons
   for keyboard and touch users. Manual reordering is honoured when no
   automatic sort is overriding it (see the *Reordering* note below).
+- **Task reminders & notifications** — automated in-app notifications for
+  upcoming and overdue tasks, with an unread badge counter, a dedicated
+  notification panel, and customizable reminder timing in profile settings.
 - **Search** — live filtering on title and description.
 - **Export** — download all tasks as **JSON** or **CSV** (RFC-4180 escaping).
 - **Accessibility** — semantic HTML, ARIA labels, `aria-live` regions for
@@ -144,11 +147,11 @@ src/
   hard-code colours, so switching themes is a single `data-theme` attribute
   change. `color-scheme` is set per theme so native date/select controls
   match, and `theme-color` meta tags align the mobile browser chrome.
-- **Squircle-style corners.** A dedicated `--radius-card: 24px` token is
-  applied to filter cards, task cards, buttons, the search input, and
-  dropdowns for an iPhone-like continuous-corner feel, while smaller
-  structural radii (`--radius`, `--radius-sm`) keep modals and badges
-  proportionate.
+- **Bubble card architecture.** A dedicated `--radius-card: 24px` token is
+  paired with `--bubble-border` accent rings and dual-layer glow shadows
+  (`--bubble-shadow`, `--bubble-shadow-hover`, `--bubble-shadow-lg`), giving
+  all cards across the landing page, authentication flow, and logged-in dashboard
+  a refined, elevated bubble card feel.
 - **No UI library.** The brief asked to avoid heavy UI libraries unless
   justified. The component set is small enough that hand-written CSS is
   clearer and shows stronger fundamentals than a styled-components box.

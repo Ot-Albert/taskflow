@@ -49,15 +49,15 @@ export default function NotificationBell({
     <button
       ref={bellRef}
       type="button"
-      className="notification-bell"
+      className={`notification-bell${open ? " notification-bell--active" : ""}${unreadCount > 0 ? " notification-bell--has-unread" : ""}`}
       onClick={onToggle}
       aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
       aria-expanded={open}
       aria-haspopup="dialog"
     >
       <svg
-        width="22"
-        height="22"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

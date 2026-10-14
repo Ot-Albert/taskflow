@@ -13,7 +13,7 @@ export default function ConfirmDialog({
       aria-modal="true"
       aria-labelledby="confirm-title"
     >
-      <div className="modal modal--small" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal--small bubble-card" onClick={(e) => e.stopPropagation()}>
         <h2 id="confirm-title">{title}</h2>
         <p className="confirm__message">{message}</p>
         <footer className="task-form__actions">

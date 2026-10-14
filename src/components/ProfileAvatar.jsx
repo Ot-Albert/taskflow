@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Camera, X } from "lucide-react";
 
 /**
  * Circular avatar with image or initials fallback.
@@ -15,6 +16,7 @@ export default function ProfileAvatar({
   onRemove,
   size = "md",
   saving = false,
+  className = "",
   "aria-label": ariaLabel,
   "aria-expanded": ariaExpanded,
   "aria-haspopup": ariaHaspopup,
@@ -42,7 +44,7 @@ export default function ProfileAvatar({
   const sizeClass = `profile-avatar--${size}`;
 
   return (
-    <div className={`profile-avatar ${sizeClass}`}>
+    <div className={`profile-avatar ${sizeClass} ${className}`.trim()}>
       <button
         type="button"
         className="profile-avatar__button"
@@ -71,7 +73,7 @@ export default function ProfileAvatar({
         )}
         {editable && !saving && (
           <span className="profile-avatar__overlay">
-            <span className="profile-avatar__overlay-icon">📷</span>
+            <Camera className="profile-avatar__overlay-icon" size={20} />
           </span>
         )}
         {saving && (
@@ -97,7 +99,7 @@ export default function ProfileAvatar({
           aria-label="Remove profile picture"
           title="Remove picture"
         >
-          ✕
+          <X size={12} strokeWidth={2.5} />
         </button>
       )}
     </div>

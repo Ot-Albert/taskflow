@@ -24,7 +24,7 @@ export default function FilterBar({
   onClear,
 }) {
   return (
-    <section className="filter-bar" aria-label="Filters and search">
+    <section className="filter-bar bubble-card" aria-label="Filters and search">
       <div className="filter-bar__search">
         <label htmlFor="search" className="sr-only">
           Search tasks

@@ -85,7 +85,7 @@ export default function TaskForm({ task, onSave, onClose }) {
       aria-modal="true"
       aria-labelledby="form-title"
     >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal bubble-card" onClick={(e) => e.stopPropagation()}>
         <header className="modal__header">
           <h2 id="form-title">{isEdit ? "Edit task" : "New task"}</h2>
           <button

@@ -46,9 +46,12 @@ export default function AccountActionDialog({
     : "Your account will be deactivated. You won't be able to access your tasks until you sign in again and reactivate. Your data is preserved.";
 
   return (
-    <div className="dialog-overlay" onClick={onCancel}>
+    <div
+      className="dialog-overlay dialog-overlay--account"
+      onClick={onCancel}
+    >
       <div
-        className="dialog account-dialog"
+        className="dialog account-dialog bubble-card"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="account-dialog-title"

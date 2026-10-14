@@ -16,6 +16,7 @@ export default function Header({
   onMarkAsRead,
   onMarkAllAsRead,
   onDeleteNotification,
+  onSelectTask,
 }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -50,6 +51,7 @@ export default function Header({
             onMarkAllAsRead={onMarkAllAsRead}
             onDelete={onDeleteNotification}
             onClose={() => setNotifOpen(false)}
+            onSelectTask={onSelectTask}
           />
         </div>
         <ProfileAvatar

@@ -1,6 +1,6 @@
 export default function EmptyState({ message, hint }) {
   return (
-    <div className="empty-state" role="status">
+    <div className="empty-state bubble-card" role="status">
       <div className="empty-state__icon" aria-hidden="true">
         ✓
       </div>
